@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Token Boy Live Sketch</title>
+  </head>
+  <body>
+    <div id="app" v-scope v-cloak :style="{ '--hue': hue }">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">petite-vue + p5.js + Socket.IO</p>
+          <h1>Live Sketch Room</h1>
+        </div>
+        <div class="status" :class="{ 'is-online': connected }" aria-live="polite">
+          <span class="status-dot"></span>
+          {{ statusText }}
+        </div>
+      </header>
+
+      <main class="workspace">
+        <section class="stage" aria-label="Shared drawing canvas">
+          <div id="p5-canvas" class="canvas-host"></div>
+        </section>
+
+        <aside class="sidebar" aria-label="Sketch controls">
+          <section class="panel">
+            <div class="panel-heading">
+              <h2>Brush</h2>
+              <button class="icon-button" type="button" title="Clear canvas" @click="clearCanvas">
+                ⌫
+              </button>
+            </div>
+
+            <label class="control">
+              <span>Hue</span>
+              <input type="range" min="0" max="359" v-model="hue" />
+            </label>
+            <div class="swatch-row" aria-label="Quick colors">
+              <button
+                v-for="swatch in swatches"
+                :key="swatch"
+                class="swatch"
+                type="button"
+                :style="{ '--swatch': `hsl(${swatch}, 82%, 56%)` }"
+                :aria-label="`Use hue ${swatch}`"
+                @click="setHue(swatch)"
+              ></button>
+            </div>
+
+            <label class="control">
+              <span>Radius</span>
+              <input type="range" min="8" max="60" v-model="radius" />
+            </label>
+          </section>
+
+          <section class="panel">
+            <div class="panel-heading">
+              <h2>Room</h2>
+              <span class="peer-count">{{ peers }} online</span>
+            </div>
+
+            <label class="control">
+              <span>Name</span>
+              <input type="text" maxlength="24" v-model="name" />
+            </label>
+
+            <form class="message-form" @submit.prevent="sendMessage">
+              <input type="text" maxlength="160" placeholder="Send a note" v-model="draftMessage" />
+              <button type="submit">Send</button>
+            </form>
+
+            <div class="messages" aria-live="polite">
+              <p v-if="messages.length === 0" class="empty-state">No room messages yet.</p>
+              <article v-for="message in messages" :key="message.id" class="message">
+                <strong :style="{ color: message.color }">{{ message.name }}</strong>
+                <span>{{ message.text }}</span>
+              </article>
+            </div>
+          </section>
+        </aside>
+      </main>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
