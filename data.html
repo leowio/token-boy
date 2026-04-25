@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Token Boy Status</title>
+    <title>Token Boy Data</title>
     <style>
       :root {
         color: #f6d747;
@@ -52,7 +52,7 @@
           </nav>
         </header>
 
-        <nav class="subtabs" aria-label="STAT navigation">
+        <nav class="subtabs" aria-label="DATA navigation">
           <a
             v-for="(subtab, index) in activeSubtabs"
             :key="subtab"
@@ -64,26 +64,34 @@
           </a>
         </nav>
 
-        <section class="tab-panel stat-panel" role="tabpanel" aria-labelledby="tab-stat">
-          <section class="view-mode" aria-label="View mode">
-            <p>VIEW MODE</p>
-            <span></span>
-          </section>
+        <section class="tab-panel data-panel" role="tabpanel" aria-labelledby="tab-data">
+          <div class="data-grid">
+            <article class="data-card">
+              <h2>ITEMS</h2>
+              <ul>
+                <li><span>STIMPAK</span><strong>1</strong></li>
+                <li><span>RADAWAY</span><strong>0</strong></li>
+                <li><span>10MM ROUND</span><strong>48</strong></li>
+                <li><span>FUSION CELL</span><strong>22</strong></li>
+              </ul>
+            </article>
 
-          <section class="body-grid" aria-label="Character overview">
-            <div class="limb-column left">
-              <span></span>
-              <span></span>
-            </div>
+            <article class="data-card">
+              <h2>QUESTS</h2>
+              <ul>
+                <li><span>FIRST SIGNAL</span><strong>ON</strong></li>
+                <li><span>VAULT RELAY</span><strong>42%</strong></li>
+                <li><span>WATER CHIP</span><strong>LOW</strong></li>
+                <li><span>RAD SWEEP</span><strong>IDLE</strong></li>
+              </ul>
+            </article>
+          </div>
 
-            <div class="character-bay" aria-label="Blank character area">
-              <div class="empty-figure" aria-hidden="true"></div>
-            </div>
-
-            <div class="limb-column right">
-              <span></span>
-              <span></span>
-            </div>
+          <section class="data-log" aria-label="Data log">
+            <h2>LOG</h2>
+            <p>LOCAL CACHE READY</p>
+            <p>ARCHIVE INDEX 006 MOUNTED</p>
+            <p>NO ACTIVE TRANSMISSION</p>
           </section>
         </section>
 
@@ -104,6 +112,6 @@
       </section>
     </main>
 
-    <script type="module" src="/src/stat.ts"></script>
+    <script type="module" src="/src/data.ts"></script>
   </body>
 </html>

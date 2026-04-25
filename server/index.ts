@@ -5,6 +5,7 @@ import { Server } from "socket.io";
 import type {
   ChatMessage,
   ClientToServerEvents,
+  MapPin,
   ServerToClientEvents,
   SketchEvent,
 } from "../shared/socket-events.js";
@@ -16,6 +17,7 @@ const clientOrigins = process.env.CLIENT_ORIGIN?.split(",")
 
 const app = express();
 const server = http.createServer(app);
+const mapPins: MapPin[] = [];
 const io = new Server<ClientToServerEvents, ServerToClientEvents>(server, {
   cors: {
     origin: clientOrigins,
@@ -45,6 +47,7 @@ app.use((request, response, next) => {
 
 io.on("connection", (socket) => {
   io.emit("presence", io.of("/").sockets.size);
+  socket.emit("allMapPins", mapPins);
 
   socket.on("sketchEvent", (event) => {
     const sketchEvent: SketchEvent = {
@@ -71,6 +74,29 @@ io.on("connection", (socket) => {
     };
 
     io.emit("message", chatMessage);
+  });
+
+  socket.on("mapPin", (pin) => {
+    if (!Number.isFinite(pin.lat) || !Number.isFinite(pin.lng)) {
+      return;
+    }
+
+    const mapPin: MapPin = {
+      id: `${pin.userId.trim().slice(0, 64) || socket.id}-${Date.now()}`,
+      lat: pin.lat,
+      lng: pin.lng,
+      userId: pin.userId.trim().slice(0, 64) || socket.id,
+      username: pin.username.trim().slice(0, 24) || "DWELLER",
+      userHue: Math.min(60, Math.max(38, pin.userHue)),
+      createdAt: Date.now(),
+    };
+
+    mapPins.push(mapPin);
+    if (mapPins.length > 400) {
+      mapPins.splice(0, mapPins.length - 400);
+    }
+
+    io.emit("mapPin", mapPin);
   });
 
   socket.on("disconnect", () => {

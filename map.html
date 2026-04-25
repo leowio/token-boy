@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Token Boy Map</title>
+    <style>
+      :root {
+        color: #f6d747;
+        background: #000;
+        font-family: "Courier New", Courier, monospace;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: #000;
+      }
+
+      body {
+        overflow: hidden;
+      }
+
+      [v-cloak] {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <main id="app" class="terminal" aria-label="Token Boy terminal" v-scope v-cloak>
+      <section class="screen is-map-view">
+        <header class="tabs" aria-label="Primary navigation">
+          <nav
+            class="tab-list"
+            aria-label="Primary tabs"
+            role="tablist"
+            @keydown="onTabKeydown($event)"
+          >
+            <a
+              v-for="page in pages"
+              :key="page.id"
+              class="tab-button"
+              :class="{ 'is-active': activePage === page.id }"
+              :id="'tab-' + page.id"
+              :href="page.href"
+              role="tab"
+              :aria-selected="activePage === page.id ? 'true' : 'false'"
+            >
+              {{ page.label }}
+            </a>
+          </nav>
+        </header>
+
+        <nav class="subtabs" aria-label="MAP navigation" role="tablist">
+          <button
+            v-for="(subtab, index) in activeSubtabs"
+            :key="subtab"
+            type="button"
+            class="subtab-button"
+            :class="{ active: activeMapTab === subtab }"
+            :data-map-tab="subtab"
+            role="tab"
+            :aria-selected="activeMapTab === subtab ? 'true' : 'false'"
+            @click="setMapTab(subtab)"
+            @keydown="onSubtabKeydown($event, index)"
+          >
+            {{ subtab }}
+          </button>
+        </nav>
+
+        <section
+          class="tab-panel map-panel"
+          :class="{ 'is-world': activeMapTab === 'WORLD' }"
+          role="tabpanel"
+          aria-labelledby="tab-map"
+        >
+          <div class="map-frame" aria-label="Shared map">
+            <div id="vault-map" class="vault-map"></div>
+            <div class="map-reticle" aria-hidden="true"></div>
+          </div>
+
+          <aside class="map-readout">
+            <h2>{{ mapHeading }}</h2>
+            <p>{{ mapStatus }}</p>
+            <p>{{ mapCoordsText }}</p>
+            <p>{{ mapPinsText }}</p>
+            <p>{{ mapUserText }}</p>
+            <p>{{ mapZoomText }}</p>
+          </aside>
+        </section>
+      </section>
+    </main>
+
+    <script type="module" src="/src/map.ts"></script>
+  </body>
+</html>

@@ -28,13 +28,29 @@ export type ChatMessage = ChatMessageInput & {
   createdAt: number;
 };
 
+export type MapPinInput = {
+  lat: number;
+  lng: number;
+  userId: string;
+  username: string;
+  userHue: number;
+};
+
+export type MapPin = MapPinInput & {
+  id: string;
+  createdAt: number;
+};
+
 export interface ServerToClientEvents {
   message: (message: ChatMessage) => void;
   presence: (online: number) => void;
   sketchEvent: (event: SketchEvent) => void;
+  allMapPins: (pins: MapPin[]) => void;
+  mapPin: (pin: MapPin) => void;
 }
 
 export interface ClientToServerEvents {
   message: (message: ChatMessageInput) => void;
   sketchEvent: (event: SketchEventInput) => void;
+  mapPin: (pin: MapPinInput) => void;
 }
