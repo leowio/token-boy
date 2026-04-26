@@ -58,11 +58,11 @@
             :key="subtab"
             type="button"
             class="subtab-button"
-            :class="{ active: activeMapTab === subtab }"
-            :data-map-tab="subtab"
+            :class="{ active: isSubtabActive(subtab) }"
+            :data-subtab="subtab"
             role="tab"
-            :aria-selected="activeMapTab === subtab ? 'true' : 'false'"
-            @click="setMapTab(subtab)"
+            :aria-selected="isSubtabActive(subtab) ? 'true' : 'false'"
+            @click="setActiveSubtab(subtab)"
             @keydown="onSubtabKeydown($event, index)"
           >
             {{ subtab }}
@@ -71,7 +71,7 @@
 
         <section
           class="tab-panel map-panel"
-          :class="{ 'is-world': activeMapTab === 'WORLD' }"
+          :class="{ 'is-world': activeSubtab === 'WORLD' }"
           role="tabpanel"
           aria-labelledby="tab-map"
         >

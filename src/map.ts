@@ -11,6 +11,7 @@ import { createApp, reactive } from "petite-vue";
 import { io, type Socket } from "socket.io-client";
 
 import { navigatePageTabs, pages, subtabsByPage } from "./page-config";
+import { createSubtabNav } from "./subtabs";
 import type {
   ClientToServerEvents,
   MapPin,
@@ -33,8 +34,10 @@ type CameraSnapshot = {
 
 type MapPageState = {
   activePage: "map";
-  activeMapTab: MapMode;
+  activeSubtab: MapMode;
   activeSubtabs: MapMode[];
+  isSubtabActive: (subtab: string) => boolean;
+  setActiveSubtab: (subtab: string) => void;
   mapHeading: string;
   mapStatus: string;
   mapCoordsText: string;
@@ -44,7 +47,6 @@ type MapPageState = {
   pages: typeof pages;
   onTabKeydown: (event: KeyboardEvent) => void;
   onSubtabKeydown: (event: KeyboardEvent, currentIndex: number) => void;
-  setMapTab: (subtab: string) => void;
 };
 
 type PinProperties = {
@@ -113,11 +115,20 @@ let currentLocation: [number, number] | null = null;
 let gpsState = "STANDBY";
 let localCamera = { ...defaultLocalCamera };
 let worldCamera = { ...defaultWorldCamera };
+const subtabNav = createSubtabNav<MapMode>({
+  subtabs: subtabsByPage.map as MapMode[],
+  initialSubtab: "LOCAL",
+  beforeChange() {
+    rememberActiveCamera();
+  },
+  onChange(mode) {
+    applyMapMode(mode, false);
+  },
+});
 
 const appState = reactive({
   activePage: "map",
-  activeMapTab: "LOCAL",
-  activeSubtabs: subtabsByPage.map as MapMode[],
+  ...subtabNav,
   mapHeading: "LOCAL MAP",
   mapStatus: "LOCAL STANDBY / LINK LOST",
   mapCoordsText: "CTR --.---- / --.----",
@@ -127,32 +138,6 @@ const appState = reactive({
   pages,
   onTabKeydown(event: KeyboardEvent) {
     navigatePageTabs("map", event);
-  },
-  onSubtabKeydown(event: KeyboardEvent, currentIndex: number) {
-    const lastIndex = appState.activeSubtabs.length - 1;
-    let nextIndex = currentIndex;
-
-    if (event.key === "ArrowRight") {
-      nextIndex = currentIndex === lastIndex ? 0 : currentIndex + 1;
-    } else if (event.key === "ArrowLeft") {
-      nextIndex = currentIndex <= 0 ? lastIndex : currentIndex - 1;
-    } else if (event.key === "Home") {
-      nextIndex = 0;
-    } else if (event.key === "End") {
-      nextIndex = lastIndex;
-    } else {
-      return;
-    }
-
-    event.preventDefault();
-    const nextMode = appState.activeSubtabs[nextIndex];
-    setMapMode(nextMode);
-    focusSubtab(nextMode);
-  },
-  setMapTab(subtab: string) {
-    if (subtab === "LOCAL" || subtab === "WORLD") {
-      setMapMode(subtab);
-    }
   },
 }) as MapPageState;
 
@@ -226,7 +211,7 @@ function ensureMapReady() {
   map.on("load", () => {
     mapReady = true;
     installMapLayers();
-    applyMapMode(appState.activeMapTab, true);
+    applyMapMode(appState.activeSubtab, true);
     refreshPinsSource();
     refreshCurrentLocationSource();
     syncMapReadout();
@@ -316,18 +301,8 @@ function installMapLayers() {
   });
 }
 
-function setMapMode(mode: MapMode) {
-  if (appState.activeMapTab === mode) {
-    return;
-  }
-
-  rememberActiveCamera();
-  appState.activeMapTab = mode;
-  applyMapMode(mode, false);
-}
-
 function applyMapMode(mode: MapMode, immediate: boolean) {
-  appState.activeMapTab = mode;
+  appState.activeSubtab = mode;
   appState.mapHeading = mode === "WORLD" ? "WORLD GLOBE" : "LOCAL MAP";
 
   if (!map || !mapReady) {
@@ -375,7 +350,7 @@ function rememberActiveCamera() {
     zoom: map.getZoom(),
   };
 
-  if (appState.activeMapTab === "WORLD") {
+  if (appState.activeSubtab === "WORLD") {
     worldCamera = snapshot;
     return;
   }
@@ -504,7 +479,7 @@ function updateCurrentLocation(lat: number, lng: number, accuracy: number) {
     };
     hasCenteredLocalMap = true;
 
-    if (appState.activeMapTab === "LOCAL") {
+    if (appState.activeSubtab === "LOCAL") {
       applyMapMode("LOCAL", true);
     }
   }
@@ -515,9 +490,9 @@ function updateCurrentLocation(lat: number, lng: number, accuracy: number) {
 
 function syncMapReadout() {
   const linkState = socket.connected ? "LINK LIVE" : "LINK LOST";
-  const modeLabel = appState.activeMapTab === "WORLD" ? "WORLD GLOBE" : `LOCAL ${gpsState}`;
+  const modeLabel = appState.activeSubtab === "WORLD" ? "WORLD GLOBE" : `LOCAL ${gpsState}`;
 
-  appState.mapHeading = appState.activeMapTab === "WORLD" ? "WORLD GLOBE" : "LOCAL MAP";
+  appState.mapHeading = appState.activeSubtab === "WORLD" ? "WORLD GLOBE" : "LOCAL MAP";
   appState.mapStatus = `${modeLabel} / ${linkState}`;
   appState.mapUserText =
     gpsAccuracy === null
@@ -527,23 +502,23 @@ function syncMapReadout() {
   if (!map || !mapReady) {
     appState.mapCoordsText = "CTR --.---- / --.----";
     appState.mapPinsText =
-      appState.activeMapTab === "WORLD"
+      appState.activeSubtab === "WORLD"
         ? `PINS ${mapPins.size} TRACKED`
         : `PINS 0 VIS / ${mapPins.size} TOT`;
-    appState.mapZoomText = `${appState.activeMapTab === "WORLD" ? "GLOBE" : "ZOOM"} --.- / DBLCLICK PIN`;
+    appState.mapZoomText = `${appState.activeSubtab === "WORLD" ? "GLOBE" : "ZOOM"} --.- / DBLCLICK PIN`;
     return;
   }
 
   const center = map.getCenter().wrap();
-  const visiblePins = appState.activeMapTab === "WORLD" ? mapPins.size : countVisiblePins();
+  const visiblePins = appState.activeSubtab === "WORLD" ? mapPins.size : countVisiblePins();
 
   appState.mapCoordsText = `CTR ${center.lat.toFixed(4)} / ${center.lng.toFixed(4)}`;
   appState.mapPinsText =
-    appState.activeMapTab === "WORLD"
+    appState.activeSubtab === "WORLD"
       ? `PINS ${visiblePins} TRACKED`
       : `PINS ${visiblePins} VIS / ${mapPins.size} TOT`;
   appState.mapZoomText = `${
-    appState.activeMapTab === "WORLD" ? "GLOBE" : "ZOOM"
+    appState.activeSubtab === "WORLD" ? "GLOBE" : "ZOOM"
   } ${map.getZoom().toFixed(1)} / DBLCLICK PIN`;
 }
 
@@ -630,12 +605,6 @@ function transformLng(lng: number, lat: number) {
   result += ((20 * Math.sin(lng * Math.PI) + 40 * Math.sin((lng / 3) * Math.PI)) * 2) / 3;
   result += ((150 * Math.sin((lng / 12) * Math.PI) + 300 * Math.sin((lng / 30) * Math.PI)) * 2) / 3;
   return result;
-}
-
-function focusSubtab(mode: MapMode) {
-  requestAnimationFrame(() => {
-    document.querySelector<HTMLButtonElement>(`.subtab-button[data-map-tab="${mode}"]`)?.focus();
-  });
 }
 
 function emptyFeatureCollection<

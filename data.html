@@ -52,16 +52,21 @@
           </nav>
         </header>
 
-        <nav class="subtabs" aria-label="DATA navigation">
-          <a
+        <nav class="subtabs" aria-label="DATA navigation" role="tablist">
+          <button
             v-for="(subtab, index) in activeSubtabs"
             :key="subtab"
-            :class="{ active: index === 0 }"
-            href="#"
-            @click.prevent
+            type="button"
+            class="subtab-button"
+            :class="{ active: isSubtabActive(subtab) }"
+            :data-subtab="subtab"
+            role="tab"
+            :aria-selected="isSubtabActive(subtab) ? 'true' : 'false'"
+            @click="setActiveSubtab(subtab)"
+            @keydown="onSubtabKeydown($event, index)"
           >
             {{ subtab }}
-          </a>
+          </button>
         </nav>
 
         <section class="tab-panel data-panel" role="tabpanel" aria-labelledby="tab-data">

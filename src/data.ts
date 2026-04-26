@@ -3,13 +3,17 @@ import "./styles.css";
 import { createApp, reactive } from "petite-vue";
 
 import { footerMetersByPage, navigatePageTabs, pages, subtabsByPage } from "./page-config";
+import { createSubtabNav } from "./subtabs";
 
 const activePage = "data" as const;
 const footer = footerMetersByPage[activePage];
+const subtabNav = createSubtabNav({
+  subtabs: subtabsByPage[activePage],
+});
 
 const appState = reactive({
   activePage,
-  activeSubtabs: subtabsByPage[activePage],
+  ...subtabNav,
   footerLeft: footer[0],
   footerCenter: footer[1],
   footerRight: footer[2],

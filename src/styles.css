@@ -206,8 +206,21 @@ ul {
 }
 
 .subtab-button {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
   padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: inherit;
+  letter-spacing: 0;
+  line-height: 1;
   opacity: 0.88;
+  text-shadow: inherit;
 }
 
 .subtab-button.active {
