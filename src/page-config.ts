@@ -12,6 +12,9 @@ export type FooterMeter = {
   percent: number;
 };
 
+export const cameraPageHref = "/camera.html";
+const cameraReturnParam = "returnTo";
+
 export const pages: PageLink[] = [
   { id: "stat", label: "STAT", href: "/" },
   { id: "data", label: "DATA", href: "/data.html" },
@@ -20,7 +23,7 @@ export const pages: PageLink[] = [
 
 export const subtabsByPage: Record<PageId, string[]> = {
   stat: ["STATUS", "SPECIAL", "PERKS"],
-  data: ["ITEMS", "QUESTS", "LOGS"],
+  data: ["ALL", "ME"],
   map: ["LOCAL", "WORLD"],
 };
 
@@ -61,4 +64,25 @@ export function navigatePageTabs(activePage: PageId, event: KeyboardEvent) {
 
   event.preventDefault();
   window.location.assign(pages[nextIndex].href);
+}
+
+export function buildCameraPageHref(returnHref = getCurrentPageHref()) {
+  const params = new URLSearchParams();
+  params.set(cameraReturnParam, returnHref);
+  return `${cameraPageHref}?${params.toString()}`;
+}
+
+export function getCameraReturnHref() {
+  const params = new URLSearchParams(window.location.search);
+  const returnHref = params.get(cameraReturnParam);
+
+  if (!returnHref || !returnHref.startsWith("/")) {
+    return pages.find((page) => page.id === "map")?.href ?? "/";
+  }
+
+  return returnHref;
+}
+
+function getCurrentPageHref() {
+  return `${window.location.pathname}${window.location.search}${window.location.hash}`;
 }

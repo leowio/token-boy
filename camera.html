@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Token Boy Camera</title>
+    <style>
+      :root {
+        color: #f6d747;
+        background: #000;
+        font-family: "Courier New", Courier, monospace;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: #000;
+      }
+
+      body {
+        overflow: hidden;
+      }
+
+      [v-cloak] {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <main id="app" class="terminal" aria-label="Token Boy terminal" v-scope v-cloak>
+      <section class="screen is-camera-view">
+        <header class="camera-header" aria-label="Field camera header">
+          <h1 class="camera-heading">FIELD CAMERA</h1>
+          <a
+            class="screen-tool camera-tool"
+            :class="{ 'is-active': true, 'is-armed': hasPendingPhoto }"
+            :href="cameraHref"
+            aria-label="Field camera"
+            title="Field camera"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path
+                d="M13.997 4a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 1.759-1.048l.489-.904A2 2 0 0 1 10.004 4z"
+              />
+              <circle cx="12" cy="13" r="3" />
+            </svg>
+          </a>
+        </header>
+
+        <section
+          class="tab-panel camera-panel"
+          :class="{ 'is-captured': hasSnapshot }"
+          aria-label="Field camera"
+        >
+          <div class="camera-frame" :class="{ 'is-captured': hasSnapshot }">
+            <video
+              id="field-camera-video"
+              class="field-camera-source"
+              autoplay
+              muted
+              playsinline
+            ></video>
+            <canvas id="field-camera-canvas" class="field-camera-view"></canvas>
+            <div class="camera-reticle" aria-hidden="true"></div>
+          </div>
+
+          <div class="camera-sidebar">
+            <aside v-if="!hasSnapshot" class="map-readout camera-readout">
+              <h2>FIELD CAMERA</h2>
+              <p>{{ cameraStatus }}</p>
+              <p>{{ cameraCoordsText }}</p>
+              <p>{{ cameraPhotoText }}</p>
+              <p>{{ cameraUserText }}</p>
+              <p>{{ cameraFrameText }}</p>
+            </aside>
+
+            <form v-if="hasSnapshot" class="camera-form" @submit.prevent="savePlace">
+              <div class="camera-form-header">
+                <h2>PLACE RECORD</h2>
+                <p>{{ formStatus }}</p>
+              </div>
+
+              <label class="camera-field">
+                <span>TITLE</span>
+                <input
+                  v-model="placeTitle"
+                  class="camera-input"
+                  type="text"
+                  name="title"
+                  maxlength="64"
+                  autocomplete="off"
+                  spellcheck="false"
+                  placeholder="ENTER TITLE"
+                />
+              </label>
+
+              <label class="camera-field">
+                <span>DESCRIPTION</span>
+                <textarea
+                  v-model="placeDescription"
+                  class="camera-input camera-textarea"
+                  name="description"
+                  rows="5"
+                  maxlength="240"
+                  spellcheck="false"
+                  placeholder="ENTER DESCRIPTION"
+                ></textarea>
+              </label>
+
+              <div class="camera-field-grid">
+                <label class="camera-field">
+                  <span>LAT</span>
+                  <input
+                    :value="placeLatitude"
+                    class="camera-input is-readonly"
+                    type="text"
+                    readonly
+                    tabindex="-1"
+                  />
+                </label>
+
+                <label class="camera-field">
+                  <span>LNG</span>
+                  <input
+                    :value="placeLongitude"
+                    class="camera-input is-readonly"
+                    type="text"
+                    readonly
+                    tabindex="-1"
+                  />
+                </label>
+              </div>
+
+              <label class="camera-field">
+                <span>USER ID</span>
+                <input
+                  :value="placeUserId"
+                  class="camera-input is-readonly"
+                  type="text"
+                  readonly
+                  tabindex="-1"
+                />
+              </label>
+
+              <div class="camera-actions">
+                <button
+                  v-if="hasSnapshot"
+                  type="button"
+                  class="capture-button secondary"
+                  @click="retakePhoto"
+                >
+                  RETAKE
+                </button>
+                <button
+                  v-if="hasSnapshot"
+                  type="submit"
+                  class="capture-button"
+                  :disabled="isSaving"
+                >
+                  {{ isSaving ? "STORING" : "STORE PLACE" }}
+                </button>
+                <button v-else type="button" class="capture-button" @click="capturePhoto">
+                  CAPTURE
+                </button>
+              </div>
+            </form>
+
+            <button v-else type="button" class="capture-button" @click="capturePhoto">
+              CAPTURE
+            </button>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script type="module" src="/src/camera.ts"></script>
+  </body>
+</html>

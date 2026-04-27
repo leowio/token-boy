@@ -28,15 +28,16 @@ export type ChatMessage = ChatMessageInput & {
   createdAt: number;
 };
 
-export type MapPinInput = {
-  lat: number;
-  lng: number;
+export type PlaceInput = {
+  photo: string | null;
+  title: string;
+  description: string;
+  latitude: number;
+  longitude: number;
   userId: string;
-  username: string;
-  userHue: number;
 };
 
-export type MapPin = MapPinInput & {
+export type Place = PlaceInput & {
   id: string;
   createdAt: number;
 };
@@ -45,12 +46,12 @@ export interface ServerToClientEvents {
   message: (message: ChatMessage) => void;
   presence: (online: number) => void;
   sketchEvent: (event: SketchEvent) => void;
-  allMapPins: (pins: MapPin[]) => void;
-  mapPin: (pin: MapPin) => void;
+  allPlaces: (places: Place[]) => void;
+  placeCreated: (place: Place) => void;
 }
 
 export interface ClientToServerEvents {
   message: (message: ChatMessageInput) => void;
   sketchEvent: (event: SketchEventInput) => void;
-  mapPin: (pin: MapPinInput) => void;
+  createPlace: (place: PlaceInput) => void;
 }

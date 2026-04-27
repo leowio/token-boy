@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Token Boy Status</title>
+    <title>Token Boy Data Detail</title>
     <style>
       :root {
         color: #f6d747;
@@ -31,6 +31,28 @@
     <main id="app" class="terminal" aria-label="Token Boy terminal" v-scope v-cloak>
       <section class="screen">
         <header class="tabs" aria-label="Primary navigation">
+          <a
+            class="screen-tool back-tool"
+            href="/data.html"
+            aria-label="Return to archive"
+            title="Return to archive"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="m15 18-6-6 6-6" />
+            </svg>
+          </a>
+
           <nav
             class="tab-list"
             aria-label="Primary tabs"
@@ -78,63 +100,45 @@
           </a>
         </header>
 
-        <nav class="subtabs" aria-label="STAT navigation" role="tablist">
-          <button
-            v-for="(subtab, index) in activeSubtabs"
-            :key="subtab"
-            type="button"
-            class="subtab-button"
-            :class="{ active: isSubtabActive(subtab) }"
-            :data-subtab="subtab"
-            role="tab"
-            :aria-selected="isSubtabActive(subtab) ? 'true' : 'false'"
-            @click="setActiveSubtab(subtab)"
-            @keydown="onSubtabKeydown($event, index)"
-          >
-            {{ subtab }}
-          </button>
+        <nav class="subtabs" aria-label="DATA navigation" role="navigation">
+          <a class="subtab-button active" href="/data.html">ARCHIVE</a>
+          <span class="subtab-button">{{ detailLabel }}</span>
         </nav>
 
-        <section class="tab-panel stat-panel" role="tabpanel" aria-labelledby="tab-stat">
-          <section class="view-mode" aria-label="View mode">
-            <p>VIEW MODE</p>
-            <span></span>
+        <section class="tab-panel data-detail-panel" role="tabpanel" aria-labelledby="tab-data">
+          <section v-if="!place" class="data-empty">
+            <h2>{{ detailStatus }}</h2>
+            <p>{{ detailHint }}</p>
+            <a class="data-back-link" href="/data.html">RETURN TO ARCHIVE</a>
           </section>
 
-          <section class="body-grid" aria-label="Character overview">
-            <div class="limb-column left">
-              <span></span>
-              <span></span>
-            </div>
+          <template v-else>
+            <section class="data-detail-hero">
+              <div class="data-photo-frame">
+                <img v-if="place.photo" class="data-photo" :src="place.photo" :alt="place.title" />
+                <div v-else class="data-photo-placeholder">NO IMAGE</div>
+              </div>
 
-            <div class="character-bay" aria-label="Blank character area">
-              <div class="empty-figure" aria-hidden="true"></div>
-            </div>
+              <aside class="data-detail-meta">
+                <h2>{{ place.title }}</h2>
+                <p>{{ detailStatus }}</p>
+                <p>ID {{ place.id }}</p>
+                <p>USER {{ place.userId }}</p>
+                <p>COORD {{ placeCoords }}</p>
+                <p>STAMP {{ placeTimestamp }}</p>
+                <a class="data-back-link" href="/data.html">RETURN TO ARCHIVE</a>
+              </aside>
+            </section>
 
-            <div class="limb-column right">
-              <span></span>
-              <span></span>
-            </div>
-          </section>
+            <article class="data-detail-body">
+              <h2>DESCRIPTION</h2>
+              <p>{{ placeDescription }}</p>
+            </article>
+          </template>
         </section>
-
-        <footer class="meters" aria-label="Vitals">
-          <div class="meter hp">
-            <strong>{{ footerLeft.label }}</strong>
-            <span>{{ footerLeft.value }}</span>
-          </div>
-          <div class="meter level">
-            <strong>{{ footerCenter.label }}</strong>
-            <span class="bar"><i :style="{ width: footerCenter.percent + '%' }"></i></span>
-          </div>
-          <div class="meter ap">
-            <strong>{{ footerRight.label }}</strong>
-            <span>{{ footerRight.value }}</span>
-          </div>
-        </footer>
       </section>
     </main>
 
-    <script type="module" src="/src/stat.ts"></script>
+    <script type="module" src="/src/data-detail.ts"></script>
   </body>
 </html>

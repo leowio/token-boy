@@ -2,7 +2,14 @@ import "./styles.css";
 
 import { createApp, reactive } from "petite-vue";
 
-import { footerMetersByPage, navigatePageTabs, pages, subtabsByPage } from "./page-config";
+import {
+  buildCameraPageHref,
+  footerMetersByPage,
+  navigatePageTabs,
+  pages,
+  subtabsByPage,
+} from "./page-config";
+import { hasPendingPlacePhoto } from "./place-photo";
 import { createSubtabNav } from "./subtabs";
 
 const activePage = "stat" as const;
@@ -14,6 +21,8 @@ const subtabNav = createSubtabNav({
 const appState = reactive({
   activePage,
   ...subtabNav,
+  cameraHref: buildCameraPageHref(),
+  hasPendingPhoto: hasPendingPlacePhoto(),
   footerLeft: footer[0],
   footerCenter: footer[1],
   footerRight: footer[2],

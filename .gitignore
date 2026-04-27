@@ -24,6 +24,12 @@ pnpm-debug.log*
 .cache/
 .eslintcache
 *.tsbuildinfo
+data/
+public/uploads/*
+!public/uploads/.gitkeep
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
 
 # OS and editor files
 .DS_Store

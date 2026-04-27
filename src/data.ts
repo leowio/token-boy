@@ -2,21 +2,50 @@ import "./styles.css";
 
 import { createApp, reactive } from "petite-vue";
 
-import { footerMetersByPage, navigatePageTabs, pages, subtabsByPage } from "./page-config";
+import { buildCameraPageHref, navigatePageTabs, pages, subtabsByPage } from "./page-config";
+import { hasPendingPlacePhoto } from "./place-photo";
+import {
+  fetchPlaces,
+  formatPlaceCoords,
+  formatPlaceTimestamp,
+  getPlaceDetailHref,
+  summarizeDescription,
+} from "./place-utils";
 import { createSubtabNav } from "./subtabs";
+import { getOrCreateUserProfile } from "./user-profile";
+import type { Place } from "../shared/socket-events";
 
 const activePage = "data" as const;
-const footer = footerMetersByPage[activePage];
-const subtabNav = createSubtabNav({
-  subtabs: subtabsByPage[activePage],
+const profile = getOrCreateUserProfile();
+const subtabNav = createSubtabNav<"ALL" | "ME">({
+  subtabs: subtabsByPage[activePage] as ("ALL" | "ME")[],
+  initialSubtab: "ALL",
+  onChange() {
+    syncVisibleEntries();
+  },
 });
+
+type DataEntryRow = {
+  id: string;
+  href: string;
+  title: string;
+  summary: string;
+  coords: string;
+  owner: string;
+  timestamp: string;
+};
+
+let allPlaces: Place[] = [];
 
 const appState = reactive({
   activePage,
   ...subtabNav,
-  footerLeft: footer[0],
-  footerCenter: footer[1],
-  footerRight: footer[2],
+  cameraHref: buildCameraPageHref(),
+  dataStatus: "LOADING ARCHIVE",
+  detailHint: "SELECT ENTRY FOR DETAIL",
+  hasPendingPhoto: hasPendingPlacePhoto(),
+  isLoading: true,
+  visibleEntries: [] as DataEntryRow[],
   pages,
   onTabKeydown(event: KeyboardEvent) {
     navigatePageTabs(activePage, event);
@@ -24,3 +53,46 @@ const appState = reactive({
 });
 
 createApp(appState).mount("#app");
+void loadPlaces();
+
+async function loadPlaces() {
+  appState.isLoading = true;
+  appState.dataStatus = "LOADING ARCHIVE";
+
+  try {
+    allPlaces = await fetchPlaces();
+    syncVisibleEntries();
+  } catch (error) {
+    allPlaces = [];
+    appState.visibleEntries = [];
+    appState.dataStatus = error instanceof Error ? error.message.toUpperCase() : "LOAD FAILURE";
+  } finally {
+    appState.isLoading = false;
+  }
+}
+
+function syncVisibleEntries() {
+  const filteredPlaces =
+    appState.activeSubtab === "ME"
+      ? allPlaces.filter((place) => place.userId === profile.userId)
+      : allPlaces;
+
+  appState.visibleEntries = filteredPlaces.map((place) => ({
+    id: place.id,
+    href: getPlaceDetailHref(place.id),
+    title: place.title,
+    summary: summarizeDescription(place.description),
+    coords: formatPlaceCoords(place.latitude, place.longitude),
+    owner: place.userId === profile.userId ? "ME" : place.userId,
+    timestamp: formatPlaceTimestamp(place.createdAt),
+  }));
+
+  if (filteredPlaces.length === 0) {
+    appState.dataStatus = appState.activeSubtab === "ME" ? "NO PERSONAL ENTRIES" : "NO ENTRIES";
+    appState.detailHint = "ARCHIVE EMPTY";
+    return;
+  }
+
+  appState.dataStatus = `${appState.activeSubtab} ARCHIVE ${filteredPlaces.length}`;
+  appState.detailHint = "OPEN ENTRY FOR FULL RECORD";
+}

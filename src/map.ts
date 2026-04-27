@@ -10,19 +10,19 @@ import maplibregl, {
 import { createApp, reactive } from "petite-vue";
 import { io, type Socket } from "socket.io-client";
 
-import { navigatePageTabs, pages, subtabsByPage } from "./page-config";
+import { buildCameraPageHref, navigatePageTabs, pages, subtabsByPage } from "./page-config";
+import { clearPendingPlacePhoto, hasPendingPlacePhoto, readPendingPlacePhoto } from "./place-photo";
 import { createSubtabNav } from "./subtabs";
 import type {
   ClientToServerEvents,
-  MapPin,
-  MapPinInput,
+  Place,
+  PlaceInput,
   ServerToClientEvents,
 } from "../shared/socket-events";
 
 type UserProfile = {
   userId: string;
   username: string;
-  userHue: number;
 };
 
 type MapMode = "LOCAL" | "WORLD";
@@ -36,6 +36,8 @@ type MapPageState = {
   activePage: "map";
   activeSubtab: MapMode;
   activeSubtabs: MapMode[];
+  cameraHref: string;
+  hasPendingPhoto: boolean;
   isSubtabActive: (subtab: string) => boolean;
   setActiveSubtab: (subtab: string) => void;
   mapHeading: string;
@@ -49,8 +51,9 @@ type MapPageState = {
   onSubtabKeydown: (event: KeyboardEvent, currentIndex: number) => void;
 };
 
-type PinProperties = {
-  label: string;
+type PlaceProperties = {
+  title: string;
+  userId: string;
 };
 
 const socketUrl =
@@ -59,7 +62,7 @@ const socketUrl =
 
 const gaodeRasterTileUrl =
   "https://webst01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=6&x={x}&y={y}&z={z}";
-const pinSourceId = "shared-pins";
+const placeSourceId = "shared-places";
 const currentLocationSourceId = "current-location";
 const profile = getOrCreateUserProfile();
 const mapPixelRatio = Math.max(0.85, window.devicePixelRatio * 0.7);
@@ -94,7 +97,7 @@ const rasterBasemapStyle: StyleSpecification = {
 };
 
 const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io(socketUrl);
-const mapPins = new Map<string, MapPin>();
+const places = new Map<string, Place>();
 
 const defaultLocalCamera: CameraSnapshot = {
   center: [121.4737, 31.2304],
@@ -129,12 +132,14 @@ const subtabNav = createSubtabNav<MapMode>({
 const appState = reactive({
   activePage: "map",
   ...subtabNav,
+  cameraHref: buildCameraPageHref(),
+  hasPendingPhoto: hasPendingPlacePhoto(),
   mapHeading: "LOCAL MAP",
   mapStatus: "LOCAL STANDBY / LINK LOST",
   mapCoordsText: "CTR --.---- / --.----",
-  mapPinsText: "PINS 0 VIS / 0 TOT",
+  mapPinsText: "PLACES 0 VIS / 0 TOT",
   mapUserText: `USER ${profile.username}`,
-  mapZoomText: "ZOOM --.- / DBLCLICK PIN",
+  mapZoomText: "ZOOM --.- / DBLCLICK PLACE",
   pages,
   onTabKeydown(event: KeyboardEvent) {
     navigatePageTabs("map", event);
@@ -154,24 +159,24 @@ socket.on("disconnect", () => {
   syncMapReadout();
 });
 
-socket.on("allMapPins", (pins) => {
-  mapPins.clear();
+socket.on("allPlaces", (incomingPlaces) => {
+  places.clear();
 
-  for (const pin of pins) {
-    mapPins.set(pin.id, pin);
+  for (const place of incomingPlaces) {
+    places.set(place.id, place);
   }
 
-  refreshPinsSource();
+  refreshPlacesSource();
   syncMapReadout();
 });
 
-socket.on("mapPin", (pin) => {
-  if (mapPins.has(pin.id)) {
+socket.on("placeCreated", (place) => {
+  if (places.has(place.id)) {
     return;
   }
 
-  mapPins.set(pin.id, pin);
-  refreshPinsSource();
+  places.set(place.id, place);
+  refreshPlacesSource();
   syncMapReadout();
 });
 
@@ -212,7 +217,7 @@ function ensureMapReady() {
     mapReady = true;
     installMapLayers();
     applyMapMode(appState.activeSubtab, true);
-    refreshPinsSource();
+    refreshPlacesSource();
     refreshCurrentLocationSource();
     syncMapReadout();
 
@@ -222,7 +227,7 @@ function ensureMapReady() {
   });
 
   map.on("dblclick", (event) => {
-    placePin(event.lngLat.lat, event.lngLat.lng);
+    createPlaceAt(event.lngLat.lat, event.lngLat.lng);
   });
 
   for (const eventName of ["moveend", "zoomend"] as const) {
@@ -234,18 +239,18 @@ function ensureMapReady() {
 }
 
 function installMapLayers() {
-  if (!map || map.getSource(pinSourceId) || map.getSource(currentLocationSourceId)) {
+  if (!map || map.getSource(placeSourceId) || map.getSource(currentLocationSourceId)) {
     return;
   }
 
-  map.addSource(pinSourceId, {
+  map.addSource(placeSourceId, {
     type: "geojson",
-    data: emptyFeatureCollection<PinProperties>(),
+    data: emptyFeatureCollection<PlaceProperties>(),
   });
 
   map.addLayer({
-    id: "shared-pins-glow",
-    source: pinSourceId,
+    id: "shared-places-glow",
+    source: placeSourceId,
     type: "circle",
     paint: {
       "circle-blur": 0.26,
@@ -257,8 +262,8 @@ function installMapLayers() {
   });
 
   map.addLayer({
-    id: "shared-pins-core",
-    source: pinSourceId,
+    id: "shared-places-core",
+    source: placeSourceId,
     type: "circle",
     paint: {
       "circle-color": "#f6d747",
@@ -358,13 +363,13 @@ function rememberActiveCamera() {
   localCamera = snapshot;
 }
 
-function refreshPinsSource() {
-  const source = map?.getSource(pinSourceId);
+function refreshPlacesSource() {
+  const source = map?.getSource(placeSourceId);
   if (!(source instanceof GeoJSONSource)) {
     return;
   }
 
-  source.setData(buildPinsFeatureCollection());
+  source.setData(buildPlacesFeatureCollection());
 }
 
 function refreshCurrentLocationSource() {
@@ -376,18 +381,19 @@ function refreshCurrentLocationSource() {
   source.setData(buildCurrentLocationFeatureCollection());
 }
 
-function buildPinsFeatureCollection(): FeatureCollection<Point, PinProperties> {
+function buildPlacesFeatureCollection(): FeatureCollection<Point, PlaceProperties> {
   return {
     type: "FeatureCollection",
-    features: Array.from(mapPins.values()).map((pin) => ({
+    features: Array.from(places.values()).map((place) => ({
       type: "Feature",
-      id: pin.id,
+      id: place.id,
       properties: {
-        label: pin.username.toUpperCase(),
+        title: place.title,
+        userId: place.userId,
       },
       geometry: {
         type: "Point",
-        coordinates: [pin.lng, pin.lat],
+        coordinates: [place.longitude, place.latitude],
       },
     })),
   };
@@ -413,16 +419,19 @@ function buildCurrentLocationFeatureCollection(): FeatureCollection<Point> {
   };
 }
 
-function placePin(lat: number, lng: number) {
-  const pin: MapPinInput = {
-    lat,
-    lng,
-    userHue: profile.userHue,
+function createPlaceAt(latitude: number, longitude: number) {
+  const place: PlaceInput = {
+    photo: readPendingPlacePhoto(),
+    title: `MARK ${new Date().toISOString().slice(11, 16)}`,
+    description: "",
+    latitude,
+    longitude,
     userId: profile.userId,
-    username: profile.username,
   };
 
-  socket.emit("mapPin", pin);
+  clearPendingPlacePhoto();
+  appState.hasPendingPhoto = false;
+  socket.emit("createPlace", place);
 }
 
 function startLocationTracking() {
@@ -503,39 +512,40 @@ function syncMapReadout() {
     appState.mapCoordsText = "CTR --.---- / --.----";
     appState.mapPinsText =
       appState.activeSubtab === "WORLD"
-        ? `PINS ${mapPins.size} TRACKED`
-        : `PINS 0 VIS / ${mapPins.size} TOT`;
-    appState.mapZoomText = `${appState.activeSubtab === "WORLD" ? "GLOBE" : "ZOOM"} --.- / DBLCLICK PIN`;
+        ? `PLACES ${places.size} TRACKED`
+        : `PLACES 0 VIS / ${places.size} TOT`;
+    appState.mapZoomText = `${appState.activeSubtab === "WORLD" ? "GLOBE" : "ZOOM"} --.- / DBLCLICK PLACE`;
     return;
   }
 
   const center = map.getCenter().wrap();
-  const visiblePins = appState.activeSubtab === "WORLD" ? mapPins.size : countVisiblePins();
+  const visiblePlaces = appState.activeSubtab === "WORLD" ? places.size : countVisiblePlaces();
 
   appState.mapCoordsText = `CTR ${center.lat.toFixed(4)} / ${center.lng.toFixed(4)}`;
   appState.mapPinsText =
     appState.activeSubtab === "WORLD"
-      ? `PINS ${visiblePins} TRACKED`
-      : `PINS ${visiblePins} VIS / ${mapPins.size} TOT`;
+      ? `PLACES ${visiblePlaces} TRACKED`
+      : `PLACES ${visiblePlaces} VIS / ${places.size} TOT`;
   appState.mapZoomText = `${
     appState.activeSubtab === "WORLD" ? "GLOBE" : "ZOOM"
-  } ${map.getZoom().toFixed(1)} / DBLCLICK PIN`;
+  } ${map.getZoom().toFixed(1)} / DBLCLICK PLACE`;
 }
 
-function countVisiblePins() {
+function countVisiblePlaces() {
   if (!map) {
     return 0;
   }
 
   const bounds = map.getBounds();
 
-  return Array.from(mapPins.values()).filter((pin) => bounds.contains([pin.lng, pin.lat])).length;
+  return Array.from(places.values()).filter((place) =>
+    bounds.contains([place.longitude, place.latitude]),
+  ).length;
 }
 
 function getOrCreateUserProfile(): UserProfile {
   const userIdKey = "token-boy-map-user-id";
   const usernameKey = "token-boy-map-user-name";
-  const userHueKey = "token-boy-map-user-hue";
 
   let userId = localStorage.getItem(userIdKey);
   if (!userId) {
@@ -549,14 +559,7 @@ function getOrCreateUserProfile(): UserProfile {
     localStorage.setItem(usernameKey, username);
   }
 
-  let userHue = Number(localStorage.getItem(userHueKey));
-  if (!Number.isFinite(userHue)) {
-    userHue = 46 + Math.floor(Math.random() * 8);
-    localStorage.setItem(userHueKey, String(userHue));
-  }
-
   return {
-    userHue,
     userId,
     username,
   };
