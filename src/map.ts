@@ -1,24 +1,14 @@
 import "./styles.css";
 import "maplibre-gl/dist/maplibre-gl.css";
 
-import type { FeatureCollection, Point } from "geojson";
-import maplibregl, {
-  GeoJSONSource,
-  Map as MapLibreMap,
-  type StyleSpecification,
-} from "maplibre-gl";
+import maplibregl, { Map as MapLibreMap, Marker, type StyleSpecification } from "maplibre-gl";
 import { createApp, reactive } from "petite-vue";
 import { io, type Socket } from "socket.io-client";
 
 import { buildCameraPageHref, navigatePageTabs, pages, subtabsByPage } from "./page-config";
-import { clearPendingPlacePhoto, hasPendingPlacePhoto, readPendingPlacePhoto } from "./place-photo";
+import { hasPendingPlacePhoto } from "./place-photo";
 import { createSubtabNav } from "./subtabs";
-import type {
-  ClientToServerEvents,
-  Place,
-  PlaceInput,
-  ServerToClientEvents,
-} from "../shared/socket-events";
+import type { ClientToServerEvents, Place, ServerToClientEvents } from "../shared/socket-events";
 
 type UserProfile = {
   userId: string;
@@ -51,19 +41,13 @@ type MapPageState = {
   onSubtabKeydown: (event: KeyboardEvent, currentIndex: number) => void;
 };
 
-type PlaceProperties = {
-  title: string;
-  userId: string;
-};
-
 const socketUrl =
   import.meta.env.VITE_SOCKET_URL ??
   `${window.location.protocol}//${window.location.hostname}:3000`;
 
 const gaodeRasterTileUrl =
   "https://webst01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=6&x={x}&y={y}&z={z}";
-const placeSourceId = "shared-places";
-const currentLocationSourceId = "current-location";
+const labelZoomThreshold = 10.5;
 const profile = getOrCreateUserProfile();
 const mapPixelRatio = Math.max(0.85, window.devicePixelRatio * 0.7);
 const rasterBasemapStyle: StyleSpecification = {
@@ -98,6 +82,8 @@ const rasterBasemapStyle: StyleSpecification = {
 
 const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io(socketUrl);
 const places = new Map<string, Place>();
+const placeMarkers = new Map<string, Marker>();
+let currentLocationMarker: Marker | null = null;
 
 const defaultLocalCamera: CameraSnapshot = {
   center: [121.4737, 31.2304],
@@ -139,7 +125,7 @@ const appState = reactive({
   mapCoordsText: "CTR --.---- / --.----",
   mapPinsText: "PLACES 0 VIS / 0 TOT",
   mapUserText: `USER ${profile.username}`,
-  mapZoomText: "ZOOM --.- / DBLCLICK PLACE",
+  mapZoomText: "ZOOM --.- / VIEW ONLY",
   pages,
   onTabKeydown(event: KeyboardEvent) {
     navigatePageTabs("map", event);
@@ -166,7 +152,7 @@ socket.on("allPlaces", (incomingPlaces) => {
     places.set(place.id, place);
   }
 
-  refreshPlacesSource();
+  refreshPlaceMarkers();
   syncMapReadout();
 });
 
@@ -176,7 +162,7 @@ socket.on("placeCreated", (place) => {
   }
 
   places.set(place.id, place);
-  refreshPlacesSource();
+  refreshPlaceMarkers();
   syncMapReadout();
 });
 
@@ -187,6 +173,9 @@ window.addEventListener("pagehide", () => {
   }
 
   socket.close();
+  clearPlaceMarkers();
+  currentLocationMarker?.remove();
+  currentLocationMarker = null;
   map?.remove();
   map = null;
   mapReady = false;
@@ -215,19 +204,14 @@ function ensureMapReady() {
 
   map.on("load", () => {
     mapReady = true;
-    installMapLayers();
     applyMapMode(appState.activeSubtab, true);
-    refreshPlacesSource();
-    refreshCurrentLocationSource();
+    refreshPlaceMarkers();
+    refreshCurrentLocationMarker();
     syncMapReadout();
 
     requestAnimationFrame(() => {
       map?.resize();
     });
-  });
-
-  map.on("dblclick", (event) => {
-    createPlaceAt(event.lngLat.lat, event.lngLat.lng);
   });
 
   for (const eventName of ["moveend", "zoomend"] as const) {
@@ -236,74 +220,6 @@ function ensureMapReady() {
       syncMapReadout();
     });
   }
-}
-
-function installMapLayers() {
-  if (!map || map.getSource(placeSourceId) || map.getSource(currentLocationSourceId)) {
-    return;
-  }
-
-  map.addSource(placeSourceId, {
-    type: "geojson",
-    data: emptyFeatureCollection<PlaceProperties>(),
-  });
-
-  map.addLayer({
-    id: "shared-places-glow",
-    source: placeSourceId,
-    type: "circle",
-    paint: {
-      "circle-blur": 0.26,
-      "circle-color": "#f6d747",
-      "circle-opacity": 0.2,
-      "circle-radius": ["interpolate", ["linear"], ["zoom"], 1, 4, 6, 6, 12, 10, 18, 14],
-      "circle-stroke-width": 0,
-    },
-  });
-
-  map.addLayer({
-    id: "shared-places-core",
-    source: placeSourceId,
-    type: "circle",
-    paint: {
-      "circle-color": "#f6d747",
-      "circle-opacity": 0.94,
-      "circle-radius": ["interpolate", ["linear"], ["zoom"], 1, 1.5, 6, 2.5, 12, 4, 18, 5.5],
-      "circle-stroke-color": "rgba(0, 0, 0, 0.85)",
-      "circle-stroke-width": 1.2,
-    },
-  });
-
-  map.addSource(currentLocationSourceId, {
-    type: "geojson",
-    data: emptyFeatureCollection(),
-  });
-
-  map.addLayer({
-    id: "current-location-halo",
-    source: currentLocationSourceId,
-    type: "circle",
-    paint: {
-      "circle-color": "rgba(246, 215, 71, 0.16)",
-      "circle-opacity": 1,
-      "circle-radius": ["interpolate", ["linear"], ["zoom"], 1, 7, 6, 9, 12, 12, 18, 18],
-      "circle-stroke-color": "rgba(246, 215, 71, 0.52)",
-      "circle-stroke-width": 1.3,
-    },
-  });
-
-  map.addLayer({
-    id: "current-location-core",
-    source: currentLocationSourceId,
-    type: "circle",
-    paint: {
-      "circle-color": "#f6d747",
-      "circle-opacity": 1,
-      "circle-radius": ["interpolate", ["linear"], ["zoom"], 1, 2, 6, 3, 12, 4.5, 18, 6],
-      "circle-stroke-color": "rgba(0, 0, 0, 0.84)",
-      "circle-stroke-width": 1.4,
-    },
-  });
 }
 
 function applyMapMode(mode: MapMode, immediate: boolean) {
@@ -361,77 +277,6 @@ function rememberActiveCamera() {
   }
 
   localCamera = snapshot;
-}
-
-function refreshPlacesSource() {
-  const source = map?.getSource(placeSourceId);
-  if (!(source instanceof GeoJSONSource)) {
-    return;
-  }
-
-  source.setData(buildPlacesFeatureCollection());
-}
-
-function refreshCurrentLocationSource() {
-  const source = map?.getSource(currentLocationSourceId);
-  if (!(source instanceof GeoJSONSource)) {
-    return;
-  }
-
-  source.setData(buildCurrentLocationFeatureCollection());
-}
-
-function buildPlacesFeatureCollection(): FeatureCollection<Point, PlaceProperties> {
-  return {
-    type: "FeatureCollection",
-    features: Array.from(places.values()).map((place) => ({
-      type: "Feature",
-      id: place.id,
-      properties: {
-        title: place.title,
-        userId: place.userId,
-      },
-      geometry: {
-        type: "Point",
-        coordinates: [place.longitude, place.latitude],
-      },
-    })),
-  };
-}
-
-function buildCurrentLocationFeatureCollection(): FeatureCollection<Point> {
-  if (!currentLocation) {
-    return emptyFeatureCollection();
-  }
-
-  return {
-    type: "FeatureCollection",
-    features: [
-      {
-        type: "Feature",
-        geometry: {
-          type: "Point",
-          coordinates: [currentLocation[1], currentLocation[0]],
-        },
-        properties: {},
-      },
-    ],
-  };
-}
-
-function createPlaceAt(latitude: number, longitude: number) {
-  const place: PlaceInput = {
-    photo: readPendingPlacePhoto(),
-    title: `MARK ${new Date().toISOString().slice(11, 16)}`,
-    description: "",
-    latitude,
-    longitude,
-    userId: profile.userId,
-  };
-
-  clearPendingPlacePhoto();
-  appState.hasPendingPhoto = false;
-  socket.emit("createPlace", place);
 }
 
 function startLocationTracking() {
@@ -493,7 +338,7 @@ function updateCurrentLocation(lat: number, lng: number, accuracy: number) {
     }
   }
 
-  refreshCurrentLocationSource();
+  refreshCurrentLocationMarker();
   syncMapReadout();
 }
 
@@ -510,16 +355,16 @@ function syncMapReadout() {
 
   if (!map || !mapReady) {
     appState.mapCoordsText = "CTR --.---- / --.----";
-    appState.mapPinsText =
-      appState.activeSubtab === "WORLD"
-        ? `PLACES ${places.size} TRACKED`
-        : `PLACES 0 VIS / ${places.size} TOT`;
-    appState.mapZoomText = `${appState.activeSubtab === "WORLD" ? "GLOBE" : "ZOOM"} --.- / DBLCLICK PLACE`;
+    appState.mapPinsText = appState.activeSubtab === "WORLD"
+      ? `PLACES ${places.size} TRACKED`
+      : `PLACES 0 VIS / ${places.size} TOT`;
+    appState.mapZoomText = `${appState.activeSubtab === "WORLD" ? "GLOBE" : "ZOOM"} --.- / VIEW ONLY`;
     return;
   }
 
   const center = map.getCenter().wrap();
   const visiblePlaces = appState.activeSubtab === "WORLD" ? places.size : countVisiblePlaces();
+  syncMarkerLabelVisibility();
 
   appState.mapCoordsText = `CTR ${center.lat.toFixed(4)} / ${center.lng.toFixed(4)}`;
   appState.mapPinsText =
@@ -528,7 +373,7 @@ function syncMapReadout() {
       : `PLACES ${visiblePlaces} VIS / ${places.size} TOT`;
   appState.mapZoomText = `${
     appState.activeSubtab === "WORLD" ? "GLOBE" : "ZOOM"
-  } ${map.getZoom().toFixed(1)} / DBLCLICK PLACE`;
+  } ${map.getZoom().toFixed(1)} / VIEW ONLY`;
 }
 
 function countVisiblePlaces() {
@@ -541,6 +386,112 @@ function countVisiblePlaces() {
   return Array.from(places.values()).filter((place) =>
     bounds.contains([place.longitude, place.latitude]),
   ).length;
+}
+
+function clearPlaceMarkers() {
+  for (const marker of placeMarkers.values()) {
+    marker.remove();
+  }
+
+  placeMarkers.clear();
+}
+
+function syncMarkerLabelVisibility() {
+  if (!map) {
+    return;
+  }
+
+  const isLabelVisible = map.getZoom() >= labelZoomThreshold;
+  for (const marker of placeMarkers.values()) {
+    marker.getElement().classList.toggle("is-label-visible", isLabelVisible);
+  }
+
+  currentLocationMarker?.getElement().classList.toggle("is-label-visible", isLabelVisible);
+}
+
+function refreshPlaceMarkers() {
+  if (!map) {
+    return;
+  }
+
+  for (const [id, marker] of placeMarkers) {
+    if (!places.has(id)) {
+      marker.remove();
+      placeMarkers.delete(id);
+    }
+  }
+
+  for (const place of places.values()) {
+    const existingMarker = placeMarkers.get(place.id);
+    if (existingMarker) {
+      updatePlaceMarker(existingMarker, place);
+      continue;
+    }
+
+    const marker = createPlaceMarker(place).addTo(map);
+    placeMarkers.set(place.id, marker);
+  }
+
+  syncMarkerLabelVisibility();
+}
+
+function refreshCurrentLocationMarker() {
+  if (!map || !currentLocation) {
+    return;
+  }
+
+  const [latitude, longitude] = currentLocation;
+  if (!currentLocationMarker) {
+    currentLocationMarker = createPinMarker(profile.username, latitude, longitude).addTo(map);
+    syncMarkerLabelVisibility();
+    return;
+  }
+
+  updatePinMarker(currentLocationMarker, profile.username, latitude, longitude);
+}
+
+function createPlaceMarker(place: Place) {
+  return createPinMarker(place.title, place.latitude, place.longitude);
+}
+
+function createPinMarker(title: string, latitude: number, longitude: number) {
+  const element = document.createElement("button");
+  element.type = "button";
+  element.className = "place-marker";
+  element.setAttribute("aria-label", title);
+  element.title = title;
+
+  const pin = document.createElement("span");
+  pin.className = "place-marker-pin";
+  element.append(pin);
+
+  const label = document.createElement("span");
+  label.className = "place-marker-label";
+  element.append(label);
+
+  const marker = new Marker({
+    anchor: "center",
+    element,
+  }).setLngLat([longitude, latitude]);
+
+  updatePinMarker(marker, title, latitude, longitude);
+  return marker;
+}
+
+function updatePlaceMarker(marker: Marker, place: Place) {
+  updatePinMarker(marker, place.title, place.latitude, place.longitude);
+}
+
+function updatePinMarker(marker: Marker, title: string, latitude: number, longitude: number) {
+  const element = marker.getElement();
+  const label = element.querySelector<HTMLElement>(".place-marker-label");
+  if (label) {
+    label.textContent = title;
+  }
+
+  element.setAttribute("aria-label", title);
+  element.setAttribute("title", title);
+  marker.setLngLat([longitude, latitude]);
 }
 
 function getOrCreateUserProfile(): UserProfile {
@@ -608,13 +559,4 @@ function transformLng(lng: number, lat: number) {
   result += ((20 * Math.sin(lng * Math.PI) + 40 * Math.sin((lng / 3) * Math.PI)) * 2) / 3;
   result += ((150 * Math.sin((lng / 12) * Math.PI) + 300 * Math.sin((lng / 30) * Math.PI)) * 2) / 3;
   return result;
-}
-
-function emptyFeatureCollection<
-  TProperties extends object = Record<string, never>,
->(): FeatureCollection<Point, TProperties> {
-  return {
-    type: "FeatureCollection",
-    features: [],
-  };
 }

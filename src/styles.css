@@ -722,6 +722,48 @@ ul {
   image-rendering: crisp-edges;
 }
 
+.place-marker {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--pip-yellow);
+  pointer-events: none;
+  text-shadow:
+    0 0 4px currentColor,
+    0 0 13px var(--pip-dim),
+    2px 0 1px rgba(246, 215, 71, 0.24);
+}
+
+.place-marker-pin {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--pip-yellow);
+  box-shadow:
+    0 0 12px rgba(246, 215, 71, 0.48);
+}
+
+.place-marker-label {
+  display: none;
+  max-width: 210px;
+  color: var(--pip-yellow);
+  font-family: "Courier New", Courier, monospace;
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.place-marker.is-label-visible .place-marker-label {
+  display: block;
+}
+
 .vault-map .maplibregl-control-container {
   font: inherit;
 }
