@@ -55,8 +55,9 @@ type MapPageState = {
 };
 
 const socketUrl =
-  import.meta.env.VITE_SOCKET_URL ??
-  `${window.location.protocol}//${window.location.hostname}:3000`;
+  import.meta.env.VITE_SOCKET_URL ||
+  import.meta.env.VITE_BACKEND_URL ||
+  undefined;
 
 const gaodeRasterTileUrl =
   "https://webst01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=6&x={x}&y={y}&z={z}";

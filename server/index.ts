@@ -1,3 +1,5 @@
+import "dotenv/config";
+
 import express from "express";
 import http from "node:http";
 import path from "node:path";
@@ -20,18 +22,22 @@ const port = Number.parseInt(process.env.PORT ?? "3000", 10);
 const clientOrigins = process.env.CLIENT_ORIGIN?.split(",")
   .map((origin) => origin.trim())
   .filter(Boolean) ?? ["http://localhost:5173", "http://127.0.0.1:5173"];
+const allowAnyClientOrigin = clientOrigins.includes("*");
+const clientOriginSet = new Set(clientOrigins);
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server<ClientToServerEvents, ServerToClientEvents>(server, {
   cors: {
-    origin: clientOrigins,
+    origin(origin, callback) {
+      callback(null, isAllowedClientOrigin(origin));
+    },
   },
 });
 
 app.use((request, response, next) => {
   const origin = request.headers.origin;
-  if (origin && clientOrigins.includes(origin)) {
+  if (origin && isAllowedClientOrigin(origin)) {
     response.setHeader("Access-Control-Allow-Origin", origin);
     response.setHeader("Vary", "Origin");
   }
@@ -48,6 +54,51 @@ app.use((request, response, next) => {
 });
 
 app.use(express.json({ limit: "5mb" }));
+
+function isAllowedClientOrigin(origin: string | undefined) {
+  if (!origin) {
+    return true;
+  }
+
+  if (allowAnyClientOrigin || clientOriginSet.has(origin)) {
+    return true;
+  }
+
+  try {
+    const url = new URL(origin);
+    return url.port === "5173" && isLocalDevHost(url.hostname);
+  } catch {
+    return false;
+  }
+}
+
+function isLocalDevHost(hostname: string) {
+  return (
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname === "0.0.0.0" ||
+    hostname === "::1" ||
+    hostname.endsWith(".local") ||
+    isPrivateIpv4(hostname)
+  );
+}
+
+function isPrivateIpv4(hostname: string) {
+  const parts = hostname.split(".").map((part) => Number.parseInt(part, 10));
+  if (
+    parts.length !== 4 ||
+    parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)
+  ) {
+    return false;
+  }
+
+  const [first, second] = parts;
+  return (
+    first === 10 ||
+    (first === 172 && second >= 16 && second <= 31) ||
+    (first === 192 && second === 168)
+  );
+}
 
 app.get("/api/health", (_request, response) => {
   response.json({

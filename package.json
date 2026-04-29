@@ -12,6 +12,7 @@
     "start": "node dist-server/index.js"
   },
   "dependencies": {
+    "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "maplibre-gl": "^5.24.0",
     "p5": "^2.2.3",
@@ -23,6 +24,7 @@
     "@types/express": "^5.0.6",
     "@types/node": "^25.6.0",
     "@types/p5": "^1.7.7",
+    "@vitejs/plugin-basic-ssl": "^2.3.0",
     "concurrently": "^9.2.1",
     "tsx": "^4.21.0",
     "typescript": "^6.0.3",

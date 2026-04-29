@@ -40,7 +40,8 @@ const profile = getOrCreateUserProfile();
 const previewSize = 240;
 const cameraFilter =
   "grayscale(1) brightness(0.28) sepia(1) saturate(8) hue-rotate(3deg) contrast(1.34)";
-const apiBaseUrl = import.meta.env.VITE_API_URL ?? "";
+const apiBaseUrl =
+  import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || "";
 
 let videoElement: HTMLVideoElement | null = null;
 let previewCanvas: HTMLCanvasElement | null = null;

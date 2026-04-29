@@ -1,6 +1,7 @@
 import type { Place } from "../shared/socket-events";
 
-const apiBaseUrl = import.meta.env.VITE_API_URL ?? "";
+const apiBaseUrl =
+  import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || "";
 
 export async function fetchPlaces() {
   const response = await fetch(`${apiBaseUrl}/api/places`);

@@ -14,7 +14,7 @@ npm install
 npm run dev
 ```
 
-The frontend runs on `http://localhost:5173` and connects to the Socket.IO backend on `http://localhost:3000`.
+The frontend runs on `https://localhost:5173` in local development and proxies backend requests to `http://localhost:3000`.
 
 ## Production Build
 
@@ -35,4 +35,7 @@ cp .env.example .env
 
 - `PORT` controls the backend port.
 - `CLIENT_ORIGIN` controls allowed Socket.IO CORS origins in development.
-- `VITE_SOCKET_URL` points the frontend at a Socket.IO server.
+- Leave `VITE_BACKEND_URL` unset for local HTTPS dev so the frontend uses Vite's same-origin `/api` proxy.
+- `VITE_BACKEND_URL` points the frontend and Vite dev proxy at a backend when you need direct cross-origin calls.
+- `VITE_API_URL` can override the API base URL separately.
+- `VITE_SOCKET_URL` can override the Socket.IO server separately.
