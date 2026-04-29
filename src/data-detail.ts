@@ -4,13 +4,18 @@ import { createApp, reactive } from "petite-vue";
 
 import { buildCameraPageHref, navigatePageTabs, pages } from "./page-config";
 import { hasPendingPlacePhoto } from "./place-photo";
-import { fetchPlaces, formatPlaceCoords, formatPlaceTimestamp } from "./place-utils";
+import {
+  fetchPlaces,
+  formatPlaceCoords,
+  formatPlaceTimestamp,
+} from "./place-utils";
 import { getOrCreateUserProfile } from "./user-profile";
 import type { Place } from "../shared/socket-events";
 
 const activePage = "data" as const;
 const profile = getOrCreateUserProfile();
-const placeId = new URLSearchParams(window.location.search).get("id")?.trim() ?? "";
+const placeId =
+  new URLSearchParams(window.location.search).get("id")?.trim() ?? "";
 
 const appState = reactive({
   activePage,
@@ -49,11 +54,13 @@ async function loadPlace() {
 
     appState.place = place;
     appState.detailLabel = place.title;
-    appState.detailStatus = place.userId === profile.userId ? "MY RECORD" : "FIELD RECORD";
+    appState.detailStatus =
+      place.userId === profile.userId ? "MY RECORD" : "FIELD RECORD";
     appState.placeCoords = formatPlaceCoords(place.latitude, place.longitude);
     appState.placeDescription = place.description.trim() || "NO DESCRIPTION";
     appState.placeTimestamp = formatPlaceTimestamp(place.createdAt);
   } catch (error) {
-    appState.detailStatus = error instanceof Error ? error.message.toUpperCase() : "LOAD FAILURE";
+    appState.detailStatus =
+      error instanceof Error ? error.message.toUpperCase() : "LOAD FAILURE";
   }
 }

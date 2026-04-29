@@ -9,7 +9,12 @@ import type {
   ServerToClientEvents,
   SketchEvent,
 } from "../shared/socket-events.js";
-import { createPlace, getPlacesCount, getUploadsDirectoryPath, listPlaces } from "./place-store.js";
+import {
+  createPlace,
+  getPlacesCount,
+  getUploadsDirectoryPath,
+  listPlaces,
+} from "./place-store.js";
 
 const port = Number.parseInt(process.env.PORT ?? "3000", 10);
 const clientOrigins = process.env.CLIENT_ORIGIN?.split(",")
@@ -54,7 +59,8 @@ app.get("/api/health", (_request, response) => {
 });
 
 app.get("/api/places", (request, response) => {
-  const userId = typeof request.query.userId === "string" ? request.query.userId.trim() : "";
+  const userId =
+    typeof request.query.userId === "string" ? request.query.userId.trim() : "";
   const places = listPlaces();
 
   response.json({
@@ -69,7 +75,8 @@ app.post("/api/places", (request, response) => {
     const place = createPlace({
       photo: typeof payload.photo === "string" ? payload.photo : null,
       title: typeof payload.title === "string" ? payload.title : "",
-      description: typeof payload.description === "string" ? payload.description : "",
+      description:
+        typeof payload.description === "string" ? payload.description : "",
       latitude: Number(payload.latitude),
       longitude: Number(payload.longitude),
       userId: typeof payload.userId === "string" ? payload.userId : "",

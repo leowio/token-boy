@@ -1,14 +1,27 @@
 import "./styles.css";
 import "maplibre-gl/dist/maplibre-gl.css";
 
-import maplibregl, { Map as MapLibreMap, Marker, type StyleSpecification } from "maplibre-gl";
+import maplibregl, {
+  Map as MapLibreMap,
+  Marker,
+  type StyleSpecification,
+} from "maplibre-gl";
 import { createApp, reactive } from "petite-vue";
 import { io, type Socket } from "socket.io-client";
 
-import { buildCameraPageHref, navigatePageTabs, pages, subtabsByPage } from "./page-config";
+import {
+  buildCameraPageHref,
+  navigatePageTabs,
+  pages,
+  subtabsByPage,
+} from "./page-config";
 import { hasPendingPlacePhoto } from "./place-photo";
 import { createSubtabNav } from "./subtabs";
-import type { ClientToServerEvents, Place, ServerToClientEvents } from "../shared/socket-events";
+import type {
+  ClientToServerEvents,
+  Place,
+  ServerToClientEvents,
+} from "../shared/socket-events";
 
 type UserProfile = {
   userId: string;
@@ -80,7 +93,8 @@ const rasterBasemapStyle: StyleSpecification = {
   ],
 };
 
-const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io(socketUrl);
+const socket: Socket<ServerToClientEvents, ClientToServerEvents> =
+  io(socketUrl);
 const places = new Map<string, Place>();
 const placeMarkers = new Map<string, Marker>();
 let currentLocationMarker: Marker | null = null;
@@ -344,9 +358,11 @@ function updateCurrentLocation(lat: number, lng: number, accuracy: number) {
 
 function syncMapReadout() {
   const linkState = socket.connected ? "LINK LIVE" : "LINK LOST";
-  const modeLabel = appState.activeSubtab === "WORLD" ? "WORLD GLOBE" : `LOCAL ${gpsState}`;
+  const modeLabel =
+    appState.activeSubtab === "WORLD" ? "WORLD GLOBE" : `LOCAL ${gpsState}`;
 
-  appState.mapHeading = appState.activeSubtab === "WORLD" ? "WORLD GLOBE" : "LOCAL MAP";
+  appState.mapHeading =
+    appState.activeSubtab === "WORLD" ? "WORLD GLOBE" : "LOCAL MAP";
   appState.mapStatus = `${modeLabel} / ${linkState}`;
   appState.mapUserText =
     gpsAccuracy === null
@@ -355,15 +371,17 @@ function syncMapReadout() {
 
   if (!map || !mapReady) {
     appState.mapCoordsText = "CTR --.---- / --.----";
-    appState.mapPinsText = appState.activeSubtab === "WORLD"
-      ? `PLACES ${places.size} TRACKED`
-      : `PLACES 0 VIS / ${places.size} TOT`;
+    appState.mapPinsText =
+      appState.activeSubtab === "WORLD"
+        ? `PLACES ${places.size} TRACKED`
+        : `PLACES 0 VIS / ${places.size} TOT`;
     appState.mapZoomText = `${appState.activeSubtab === "WORLD" ? "GLOBE" : "ZOOM"} --.- / VIEW ONLY`;
     return;
   }
 
   const center = map.getCenter().wrap();
-  const visiblePlaces = appState.activeSubtab === "WORLD" ? places.size : countVisiblePlaces();
+  const visiblePlaces =
+    appState.activeSubtab === "WORLD" ? places.size : countVisiblePlaces();
   syncMarkerLabelVisibility();
 
   appState.mapCoordsText = `CTR ${center.lat.toFixed(4)} / ${center.lng.toFixed(4)}`;
@@ -406,7 +424,9 @@ function syncMarkerLabelVisibility() {
     marker.getElement().classList.toggle("is-label-visible", isLabelVisible);
   }
 
-  currentLocationMarker?.getElement().classList.toggle("is-label-visible", isLabelVisible);
+  currentLocationMarker
+    ?.getElement()
+    .classList.toggle("is-label-visible", isLabelVisible);
 }
 
 function refreshPlaceMarkers() {
@@ -442,7 +462,11 @@ function refreshCurrentLocationMarker() {
 
   const [latitude, longitude] = currentLocation;
   if (!currentLocationMarker) {
-    currentLocationMarker = createPinMarker(profile.username, latitude, longitude).addTo(map);
+    currentLocationMarker = createPinMarker(
+      profile.username,
+      latitude,
+      longitude,
+    ).addTo(map);
     syncMarkerLabelVisibility();
     return;
   }
@@ -482,7 +506,12 @@ function updatePlaceMarker(marker: Marker, place: Place) {
   updatePinMarker(marker, place.title, place.latitude, place.longitude);
 }
 
-function updatePinMarker(marker: Marker, title: string, latitude: number, longitude: number) {
+function updatePinMarker(
+  marker: Marker,
+  title: string,
+  latitude: number,
+  longitude: number,
+) {
   const element = marker.getElement();
   const label = element.querySelector<HTMLElement>(".place-marker-label");
   if (label) {
@@ -545,18 +574,46 @@ function outOfChina(lng: number, lat: number) {
 
 function transformLat(lng: number, lat: number) {
   let result =
-    -100 + 2 * lng + 3 * lat + 0.2 * lat * lat + 0.1 * lng * lat + 0.2 * Math.sqrt(Math.abs(lng));
-  result += ((20 * Math.sin(6 * lng * Math.PI) + 20 * Math.sin(2 * lng * Math.PI)) * 2) / 3;
-  result += ((20 * Math.sin(lat * Math.PI) + 40 * Math.sin((lat / 3) * Math.PI)) * 2) / 3;
-  result += ((160 * Math.sin((lat / 12) * Math.PI) + 320 * Math.sin((lat * Math.PI) / 30)) * 2) / 3;
+    -100 +
+    2 * lng +
+    3 * lat +
+    0.2 * lat * lat +
+    0.1 * lng * lat +
+    0.2 * Math.sqrt(Math.abs(lng));
+  result +=
+    ((20 * Math.sin(6 * lng * Math.PI) + 20 * Math.sin(2 * lng * Math.PI)) *
+      2) /
+    3;
+  result +=
+    ((20 * Math.sin(lat * Math.PI) + 40 * Math.sin((lat / 3) * Math.PI)) * 2) /
+    3;
+  result +=
+    ((160 * Math.sin((lat / 12) * Math.PI) +
+      320 * Math.sin((lat * Math.PI) / 30)) *
+      2) /
+    3;
   return result;
 }
 
 function transformLng(lng: number, lat: number) {
   let result =
-    300 + lng + 2 * lat + 0.1 * lng * lng + 0.1 * lng * lat + 0.1 * Math.sqrt(Math.abs(lng));
-  result += ((20 * Math.sin(6 * lng * Math.PI) + 20 * Math.sin(2 * lng * Math.PI)) * 2) / 3;
-  result += ((20 * Math.sin(lng * Math.PI) + 40 * Math.sin((lng / 3) * Math.PI)) * 2) / 3;
-  result += ((150 * Math.sin((lng / 12) * Math.PI) + 300 * Math.sin((lng / 30) * Math.PI)) * 2) / 3;
+    300 +
+    lng +
+    2 * lat +
+    0.1 * lng * lng +
+    0.1 * lng * lat +
+    0.1 * Math.sqrt(Math.abs(lng));
+  result +=
+    ((20 * Math.sin(6 * lng * Math.PI) + 20 * Math.sin(2 * lng * Math.PI)) *
+      2) /
+    3;
+  result +=
+    ((20 * Math.sin(lng * Math.PI) + 40 * Math.sin((lng / 3) * Math.PI)) * 2) /
+    3;
+  result +=
+    ((150 * Math.sin((lng / 12) * Math.PI) +
+      300 * Math.sin((lng / 30) * Math.PI)) *
+      2) /
+    3;
   return result;
 }

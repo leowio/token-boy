@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Token Boy Status</title>
+    <title>tokenboy</title>
     <style>
       :root {
         color: #f6d747;
@@ -28,7 +28,13 @@
     </style>
   </head>
   <body>
-    <main id="app" class="terminal" aria-label="Token Boy terminal" v-scope v-cloak>
+    <main
+      id="app"
+      class="terminal"
+      aria-label="Token Boy terminal"
+      v-scope
+      v-cloak
+    >
       <section class="screen">
         <header class="tabs" aria-label="Primary navigation">
           <nav
@@ -78,60 +84,16 @@
           </a>
         </header>
 
-        <nav class="subtabs" aria-label="STAT navigation" role="tablist">
-          <button
-            v-for="(subtab, index) in activeSubtabs"
-            :key="subtab"
-            type="button"
-            class="subtab-button"
-            :class="{ active: isSubtabActive(subtab) }"
-            :data-subtab="subtab"
-            role="tab"
-            :aria-selected="isSubtabActive(subtab) ? 'true' : 'false'"
-            @click="setActiveSubtab(subtab)"
-            @keydown="onSubtabKeydown($event, index)"
-          >
-            {{ subtab }}
-          </button>
-        </nav>
-
-        <section class="tab-panel stat-panel" role="tabpanel" aria-labelledby="tab-stat">
-          <section class="view-mode" aria-label="View mode">
-            <p>VIEW MODE</p>
-            <span></span>
-          </section>
-
-          <section class="body-grid" aria-label="Character overview">
-            <div class="limb-column left">
-              <span></span>
-              <span></span>
-            </div>
-
-            <div class="character-bay" aria-label="Blank character area">
-              <div class="empty-figure" aria-hidden="true"></div>
-            </div>
-
-            <div class="limb-column right">
-              <span></span>
-              <span></span>
-            </div>
+        <section
+          class="tab-panel stat-panel"
+          role="tabpanel"
+          aria-labelledby="tab-stat"
+        >
+          <section class="stat-summary" aria-label="User place entries">
+            <p>{{ statStatus }}</p>
+            <strong>{{ userPlaceCount }}</strong>
           </section>
         </section>
-
-        <footer class="meters" aria-label="Vitals">
-          <div class="meter hp">
-            <strong>{{ footerLeft.label }}</strong>
-            <span>{{ footerLeft.value }}</span>
-          </div>
-          <div class="meter level">
-            <strong>{{ footerCenter.label }}</strong>
-            <span class="bar"><i :style="{ width: footerCenter.percent + '%' }"></i></span>
-          </div>
-          <div class="meter ap">
-            <strong>{{ footerRight.label }}</strong>
-            <span>{{ footerRight.value }}</span>
-          </div>
-        </footer>
       </section>
     </main>
 

@@ -48,11 +48,13 @@ database.exec(`
 export function listPlaces() {
   return (
     database
-      .prepare(`
+      .prepare(
+        `
         SELECT id, user_id, photo, title, description, latitude, longitude, created_at
         FROM places
         ORDER BY created_at DESC
-      `)
+      `,
+      )
       .all() as PlaceRow[]
   ).map(mapRowToPlace);
 }
@@ -71,7 +73,8 @@ export function createPlace(input: PlaceInput) {
   };
 
   database
-    .prepare(`
+    .prepare(
+      `
     INSERT INTO places (
       id,
       user_id,
@@ -91,7 +94,8 @@ export function createPlace(input: PlaceInput) {
       :longitude,
       :created_at
     )
-  `)
+  `,
+    )
     .run({
       id: place.id,
       user_id: place.userId,
@@ -108,10 +112,12 @@ export function createPlace(input: PlaceInput) {
 
 export function getPlacesCount() {
   const row = database
-    .prepare(`
+    .prepare(
+      `
       SELECT COUNT(*) AS count
       FROM places
-    `)
+    `,
+    )
     .get() as { count: number } | undefined;
   return row?.count ?? 0;
 }
@@ -190,7 +196,9 @@ function sanitizeLongitude(longitude: number) {
 }
 
 function storePhotoDataUrl(photo: string) {
-  const match = photo.match(/^data:(image\/(?:jpeg|jpg|png|webp));base64,([A-Za-z0-9+/=]+)$/);
+  const match = photo.match(
+    /^data:(image\/(?:jpeg|jpg|png|webp));base64,([A-Za-z0-9+/=]+)$/,
+  );
   if (!match) {
     throw new Error("photo must be a valid image data URL");
   }

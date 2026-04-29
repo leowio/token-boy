@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Token Boy Data Detail</title>
+    <title>tokenboy</title>
     <style>
       :root {
         color: #f6d747;
@@ -28,7 +28,13 @@
     </style>
   </head>
   <body>
-    <main id="app" class="terminal" aria-label="Token Boy terminal" v-scope v-cloak>
+    <main
+      id="app"
+      class="terminal"
+      aria-label="Token Boy terminal"
+      v-scope
+      v-cloak
+    >
       <section class="screen">
         <header class="tabs" aria-label="Primary navigation">
           <a
@@ -105,7 +111,11 @@
           <span class="subtab-button">{{ detailLabel }}</span>
         </nav>
 
-        <section class="tab-panel data-detail-panel" role="tabpanel" aria-labelledby="tab-data">
+        <section
+          class="tab-panel data-detail-panel"
+          role="tabpanel"
+          aria-labelledby="tab-data"
+        >
           <section v-if="!place" class="data-empty">
             <h2>{{ detailStatus }}</h2>
             <p>{{ detailHint }}</p>
@@ -115,7 +125,12 @@
           <template v-else>
             <section class="data-detail-hero">
               <div class="data-photo-frame">
-                <img v-if="place.photo" class="data-photo" :src="place.photo" :alt="place.title" />
+                <img
+                  v-if="place.photo"
+                  class="data-photo"
+                  :src="place.photo"
+                  :alt="place.title"
+                />
                 <div v-else class="data-photo-placeholder">NO IMAGE</div>
               </div>
 
@@ -126,7 +141,9 @@
                 <p>USER {{ place.userId }}</p>
                 <p>COORD {{ placeCoords }}</p>
                 <p>STAMP {{ placeTimestamp }}</p>
-                <a class="data-back-link" href="/data.html">RETURN TO ARCHIVE</a>
+                <a class="data-back-link" href="/data.html"
+                  >RETURN TO ARCHIVE</a
+                >
               </aside>
             </section>
 

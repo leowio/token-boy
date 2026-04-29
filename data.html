@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Token Boy Data</title>
+    <title>tokenboy</title>
     <style>
       :root {
         color: #f6d747;
@@ -28,7 +28,13 @@
     </style>
   </head>
   <body>
-    <main id="app" class="terminal" aria-label="Token Boy terminal" v-scope v-cloak>
+    <main
+      id="app"
+      class="terminal"
+      aria-label="Token Boy terminal"
+      v-scope
+      v-cloak
+    >
       <section class="screen">
         <header class="tabs" aria-label="Primary navigation">
           <nav
@@ -95,7 +101,11 @@
           </button>
         </nav>
 
-        <section class="tab-panel data-panel" role="tabpanel" aria-labelledby="tab-data">
+        <section
+          class="tab-panel data-panel"
+          role="tabpanel"
+          aria-labelledby="tab-data"
+        >
           <section class="data-browser" aria-label="Data archive">
             <section v-if="isLoading" class="data-empty">
               <h2>SYNCING</h2>
@@ -107,7 +117,12 @@
               <p>{{ detailHint }}</p>
             </section>
 
-            <div v-else class="data-table" role="table" aria-label="Place archive">
+            <div
+              v-else
+              class="data-table"
+              role="table"
+              aria-label="Place archive"
+            >
               <div class="data-table-head" role="row">
                 <span>TITLE</span>
                 <span>OWNER</span>

@@ -2,30 +2,21 @@ import "./styles.css";
 
 import { createApp, reactive } from "petite-vue";
 
-import {
-  buildCameraPageHref,
-  footerMetersByPage,
-  navigatePageTabs,
-  pages,
-  subtabsByPage,
-} from "./page-config";
+import { buildCameraPageHref, navigatePageTabs, pages } from "./page-config";
 import { hasPendingPlacePhoto } from "./place-photo";
-import { createSubtabNav } from "./subtabs";
+import { fetchPlaces } from "./place-utils";
+import { getOrCreateUserProfile } from "./user-profile";
 
 const activePage = "stat" as const;
-const footer = footerMetersByPage[activePage];
-const subtabNav = createSubtabNav({
-  subtabs: subtabsByPage[activePage],
-});
+const profile = getOrCreateUserProfile();
 
 const appState = reactive({
   activePage,
-  ...subtabNav,
   cameraHref: buildCameraPageHref(),
   hasPendingPhoto: hasPendingPlacePhoto(),
-  footerLeft: footer[0],
-  footerCenter: footer[1],
-  footerRight: footer[2],
+  isLoading: true,
+  userPlaceCount: 0,
+  statStatus: "LOADING ENTRIES",
   pages,
   onTabKeydown(event: KeyboardEvent) {
     navigatePageTabs(activePage, event);
@@ -33,3 +24,23 @@ const appState = reactive({
 });
 
 createApp(appState).mount("#app");
+void loadUserPlaceCount();
+
+async function loadUserPlaceCount() {
+  appState.isLoading = true;
+  appState.statStatus = "LOADING ENTRIES";
+
+  try {
+    const places = await fetchPlaces();
+    appState.userPlaceCount = places.filter(
+      (place) => place.userId === profile.userId,
+    ).length;
+    appState.statStatus = "ENTRIES";
+  } catch (error) {
+    appState.userPlaceCount = 0;
+    appState.statStatus =
+      error instanceof Error ? error.message.toUpperCase() : "LOAD FAILURE";
+  } finally {
+    appState.isLoading = false;
+  }
+}

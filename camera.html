@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Token Boy Camera</title>
+    <title>tokenboy</title>
     <style>
       :root {
         color: #f6d747;
@@ -28,7 +28,13 @@
     </style>
   </head>
   <body>
-    <main id="app" class="terminal" aria-label="Token Boy terminal" v-scope v-cloak>
+    <main
+      id="app"
+      class="terminal"
+      aria-label="Token Boy terminal"
+      v-scope
+      v-cloak
+    >
       <section class="screen is-camera-view">
         <header class="camera-header" aria-label="Field camera header">
           <h1 class="camera-heading">FIELD CAMERA</h1>
@@ -86,7 +92,11 @@
               <p>{{ cameraFrameText }}</p>
             </aside>
 
-            <form v-if="hasSnapshot" class="camera-form" @submit.prevent="savePlace">
+            <form
+              v-if="hasSnapshot"
+              class="camera-form"
+              @submit.prevent="savePlace"
+            >
               <div class="camera-form-header">
                 <h2>PLACE RECORD</h2>
                 <p>{{ formStatus }}</p>
@@ -171,13 +181,23 @@
                 >
                   {{ isSaving ? "STORING" : "STORE PLACE" }}
                 </button>
-                <button v-else type="button" class="capture-button" @click="capturePhoto">
+                <button
+                  v-else
+                  type="button"
+                  class="capture-button"
+                  @click="capturePhoto"
+                >
                   CAPTURE
                 </button>
               </div>
             </form>
 
-            <button v-else type="button" class="capture-button" @click="capturePhoto">
+            <button
+              v-else
+              type="button"
+              class="capture-button"
+              @click="capturePhoto"
+            >
               CAPTURE
             </button>
           </div>

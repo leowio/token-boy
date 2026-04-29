@@ -27,7 +27,10 @@ export const subtabsByPage: Record<PageId, string[]> = {
   map: ["LOCAL", "WORLD"],
 };
 
-export const footerMetersByPage: Record<PageId, [FooterMeter, FooterMeter, FooterMeter]> = {
+export const footerMetersByPage: Record<
+  PageId,
+  [FooterMeter, FooterMeter, FooterMeter]
+> = {
   stat: [
     { label: "HP", value: "57/135", percent: 42 },
     { label: "LEVEL 6", value: "", percent: 82 },

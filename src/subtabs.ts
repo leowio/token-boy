@@ -33,7 +33,10 @@ export function createSubtabNav<T extends string>({
       return this.activeSubtab === subtab;
     },
     setActiveSubtab(this: SubtabNavState<T>, subtab: string) {
-      if (!activeSubtabs.includes(subtab as T) || this.activeSubtab === subtab) {
+      if (
+        !activeSubtabs.includes(subtab as T) ||
+        this.activeSubtab === subtab
+      ) {
         return;
       }
 
@@ -43,7 +46,11 @@ export function createSubtabNav<T extends string>({
       this.activeSubtab = nextSubtab;
       onChange?.(nextSubtab, previousSubtab);
     },
-    onSubtabKeydown(this: SubtabNavState<T>, event: KeyboardEvent, currentIndex: number) {
+    onSubtabKeydown(
+      this: SubtabNavState<T>,
+      event: KeyboardEvent,
+      currentIndex: number,
+    ) {
       const lastIndex = activeSubtabs.length - 1;
       let nextIndex = currentIndex;
 
@@ -69,6 +76,10 @@ export function createSubtabNav<T extends string>({
 
 function focusSubtabButton(subtab: string) {
   requestAnimationFrame(() => {
-    document.querySelector<HTMLButtonElement>(`.subtab-button[data-subtab="${subtab}"]`)?.focus();
+    document
+      .querySelector<HTMLButtonElement>(
+        `.subtab-button[data-subtab="${subtab}"]`,
+      )
+      ?.focus();
   });
 }

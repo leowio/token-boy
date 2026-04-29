@@ -3,7 +3,11 @@ import "./styles.css";
 import { createApp, reactive } from "petite-vue";
 
 import { getCameraReturnHref } from "./page-config";
-import { clearPendingPlacePhoto, hasPendingPlacePhoto, setPendingPlacePhoto } from "./place-photo";
+import {
+  clearPendingPlacePhoto,
+  hasPendingPlacePhoto,
+  setPendingPlacePhoto,
+} from "./place-photo";
 import type { PlaceInput } from "../shared/socket-events";
 
 type CameraPageState = {
@@ -94,8 +98,12 @@ window.addEventListener("pagehide", () => {
 });
 
 function initializeCameraPage() {
-  videoElement = document.getElementById("field-camera-video") as HTMLVideoElement | null;
-  previewCanvas = document.getElementById("field-camera-canvas") as HTMLCanvasElement | null;
+  videoElement = document.getElementById(
+    "field-camera-video",
+  ) as HTMLVideoElement | null;
+  previewCanvas = document.getElementById(
+    "field-camera-canvas",
+  ) as HTMLCanvasElement | null;
   previewContext = previewCanvas?.getContext("2d", { alpha: false }) ?? null;
   if (previewContext) {
     previewContext.imageSmoothingEnabled = false;
@@ -133,7 +141,9 @@ function initializeCameraPage() {
       }
 
       videoElement.srcObject = stream;
-      videoElement.addEventListener("loadedmetadata", onVideoMetadataLoaded, { once: true });
+      videoElement.addEventListener("loadedmetadata", onVideoMetadataLoaded, {
+        once: true,
+      });
       void videoElement.play().catch(() => {
         cameraState = "ERROR";
         syncCameraReadout();
@@ -142,7 +152,10 @@ function initializeCameraPage() {
     .catch((error: DOMException) => {
       if (error.name === "NotAllowedError") {
         cameraState = "DENIED";
-      } else if (error.name === "NotFoundError" || error.name === "OverconstrainedError") {
+      } else if (
+        error.name === "NotFoundError" ||
+        error.name === "OverconstrainedError"
+      ) {
         cameraState = "UNAVAILABLE";
       } else {
         cameraState = "ERROR";
@@ -171,7 +184,11 @@ function captureCurrentFrame() {
     return;
   }
 
-  if (!videoElement || videoElement.videoWidth <= 0 || videoElement.videoHeight <= 0) {
+  if (
+    !videoElement ||
+    videoElement.videoWidth <= 0 ||
+    videoElement.videoHeight <= 0
+  ) {
     cameraState = mediaStream ? "WARMUP" : "IDLE";
     appState.formStatus = "CAMERA NOT READY";
     syncCameraReadout();
@@ -330,7 +347,11 @@ function startPreviewRender() {
 
   const draw = () => {
     if (previewContext && previewCanvas) {
-      drawSquareFrame(previewContext, previewCanvas.width, previewCanvas.height);
+      drawSquareFrame(
+        previewContext,
+        previewCanvas.width,
+        previewCanvas.height,
+      );
     }
 
     previewFrameId = window.requestAnimationFrame(draw);
@@ -353,7 +374,11 @@ function drawSquareFrame(
   outputWidth: number,
   outputHeight: number,
 ) {
-  if (!videoElement || videoElement.videoWidth <= 0 || videoElement.videoHeight <= 0) {
+  if (
+    !videoElement ||
+    videoElement.videoWidth <= 0 ||
+    videoElement.videoHeight <= 0
+  ) {
     return false;
   }
 
@@ -429,7 +454,8 @@ async function storePlaceRecord() {
     resumeLivePreview();
     appState.formStatus = "PLACE STORED";
   } catch (error) {
-    appState.formStatus = error instanceof Error ? error.message.toUpperCase() : "STORE FAILURE";
+    appState.formStatus =
+      error instanceof Error ? error.message.toUpperCase() : "STORE FAILURE";
   } finally {
     appState.isSaving = false;
   }
@@ -499,18 +525,46 @@ function outOfChina(lng: number, lat: number) {
 
 function transformLat(lng: number, lat: number) {
   let result =
-    -100 + 2 * lng + 3 * lat + 0.2 * lat * lat + 0.1 * lng * lat + 0.2 * Math.sqrt(Math.abs(lng));
-  result += ((20 * Math.sin(6 * lng * Math.PI) + 20 * Math.sin(2 * lng * Math.PI)) * 2) / 3;
-  result += ((20 * Math.sin(lat * Math.PI) + 40 * Math.sin((lat / 3) * Math.PI)) * 2) / 3;
-  result += ((160 * Math.sin((lat / 12) * Math.PI) + 320 * Math.sin((lat * Math.PI) / 30)) * 2) / 3;
+    -100 +
+    2 * lng +
+    3 * lat +
+    0.2 * lat * lat +
+    0.1 * lng * lat +
+    0.2 * Math.sqrt(Math.abs(lng));
+  result +=
+    ((20 * Math.sin(6 * lng * Math.PI) + 20 * Math.sin(2 * lng * Math.PI)) *
+      2) /
+    3;
+  result +=
+    ((20 * Math.sin(lat * Math.PI) + 40 * Math.sin((lat / 3) * Math.PI)) * 2) /
+    3;
+  result +=
+    ((160 * Math.sin((lat / 12) * Math.PI) +
+      320 * Math.sin((lat * Math.PI) / 30)) *
+      2) /
+    3;
   return result;
 }
 
 function transformLng(lng: number, lat: number) {
   let result =
-    300 + lng + 2 * lat + 0.1 * lng * lng + 0.1 * lng * lat + 0.1 * Math.sqrt(Math.abs(lng));
-  result += ((20 * Math.sin(6 * lng * Math.PI) + 20 * Math.sin(2 * lng * Math.PI)) * 2) / 3;
-  result += ((20 * Math.sin(lng * Math.PI) + 40 * Math.sin((lng / 3) * Math.PI)) * 2) / 3;
-  result += ((150 * Math.sin((lng / 12) * Math.PI) + 300 * Math.sin((lng / 30) * Math.PI)) * 2) / 3;
+    300 +
+    lng +
+    2 * lat +
+    0.1 * lng * lng +
+    0.1 * lng * lat +
+    0.1 * Math.sqrt(Math.abs(lng));
+  result +=
+    ((20 * Math.sin(6 * lng * Math.PI) + 20 * Math.sin(2 * lng * Math.PI)) *
+      2) /
+    3;
+  result +=
+    ((20 * Math.sin(lng * Math.PI) + 40 * Math.sin((lng / 3) * Math.PI)) * 2) /
+    3;
+  result +=
+    ((150 * Math.sin((lng / 12) * Math.PI) +
+      300 * Math.sin((lng / 30) * Math.PI)) *
+      2) /
+    3;
   return result;
 }

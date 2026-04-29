@@ -2,7 +2,12 @@ import "./styles.css";
 
 import { createApp, reactive } from "petite-vue";
 
-import { buildCameraPageHref, navigatePageTabs, pages, subtabsByPage } from "./page-config";
+import {
+  buildCameraPageHref,
+  navigatePageTabs,
+  pages,
+  subtabsByPage,
+} from "./page-config";
 import { hasPendingPlacePhoto } from "./place-photo";
 import {
   fetchPlaces,
@@ -65,7 +70,8 @@ async function loadPlaces() {
   } catch (error) {
     allPlaces = [];
     appState.visibleEntries = [];
-    appState.dataStatus = error instanceof Error ? error.message.toUpperCase() : "LOAD FAILURE";
+    appState.dataStatus =
+      error instanceof Error ? error.message.toUpperCase() : "LOAD FAILURE";
   } finally {
     appState.isLoading = false;
   }
@@ -88,7 +94,8 @@ function syncVisibleEntries() {
   }));
 
   if (filteredPlaces.length === 0) {
-    appState.dataStatus = appState.activeSubtab === "ME" ? "NO PERSONAL ENTRIES" : "NO ENTRIES";
+    appState.dataStatus =
+      appState.activeSubtab === "ME" ? "NO PERSONAL ENTRIES" : "NO ENTRIES";
     appState.detailHint = "ARCHIVE EMPTY";
     return;
   }
