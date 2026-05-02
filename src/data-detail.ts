@@ -9,6 +9,7 @@ import {
   formatPlaceCoords,
   formatPlaceTimestamp,
 } from "./place-utils";
+import { installTokenBoyNotifier } from "./token-boy-notifier";
 import { getOrCreateUserProfile } from "./user-profile";
 import type { Place } from "../shared/socket-events";
 
@@ -35,6 +36,7 @@ const appState = reactive({
 });
 
 createApp(appState).mount("#app");
+installTokenBoyNotifier();
 void loadPlace();
 
 async function loadPlace() {

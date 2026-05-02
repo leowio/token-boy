@@ -5,6 +5,7 @@ import { createApp, reactive } from "petite-vue";
 import { buildCameraPageHref, navigatePageTabs, pages } from "./page-config";
 import { hasPendingPlacePhoto } from "./place-photo";
 import { fetchPlaces } from "./place-utils";
+import { installTokenBoyNotifier } from "./token-boy-notifier";
 import { getOrCreateUserProfile } from "./user-profile";
 
 const activePage = "stat" as const;
@@ -24,6 +25,7 @@ const appState = reactive({
 });
 
 createApp(appState).mount("#app");
+installTokenBoyNotifier();
 void loadUserPlaceCount();
 
 async function loadUserPlaceCount() {

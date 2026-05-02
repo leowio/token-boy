@@ -17,6 +17,7 @@ import {
   summarizeDescription,
 } from "./place-utils";
 import { createSubtabNav } from "./subtabs";
+import { installTokenBoyNotifier } from "./token-boy-notifier";
 import { getOrCreateUserProfile } from "./user-profile";
 import type { Place } from "../shared/socket-events";
 
@@ -58,6 +59,7 @@ const appState = reactive({
 });
 
 createApp(appState).mount("#app");
+installTokenBoyNotifier();
 void loadPlaces();
 
 async function loadPlaces() {

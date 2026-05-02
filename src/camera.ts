@@ -8,6 +8,7 @@ import {
   hasPendingPlacePhoto,
   setPendingPlacePhoto,
 } from "./place-photo";
+import { installTokenBoyNotifier, notifyTokenBoy } from "./token-boy-notifier";
 import type { PlaceInput } from "../shared/socket-events";
 
 type CameraPageState = {
@@ -85,6 +86,7 @@ const appState = reactive({
 }) as CameraPageState;
 
 createApp(appState).mount("#app");
+installTokenBoyNotifier();
 
 initializeCameraPage();
 startLocationTracking();
@@ -454,6 +456,7 @@ async function storePlaceRecord() {
     appState.placeTitle = "";
     resumeLivePreview();
     appState.formStatus = "PLACE STORED";
+    notifyTokenBoy("Thank you for your contribution");
   } catch (error) {
     appState.formStatus =
       error instanceof Error ? error.message.toUpperCase() : "STORE FAILURE";

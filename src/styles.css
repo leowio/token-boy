@@ -1148,6 +1148,80 @@ ul {
   box-shadow: 0 0 10px currentColor;
 }
 
+.token-boy-notifier {
+  position: fixed;
+  left: clamp(12px, 3vw, 28px);
+  bottom: clamp(12px, 3vw, 28px);
+  z-index: 30;
+  display: grid;
+  grid-template-columns: auto minmax(150px, 310px);
+  align-items: end;
+  gap: 10px;
+  max-width: min(560px, calc(100vw - 24px));
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+
+.token-boy-notifier.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.token-boy-notifier-figure {
+  display: block;
+  width: clamp(72px, 12vw, 132px);
+  height: auto;
+  background: transparent;
+  filter: grayscale(1) brightness(0.34) sepia(1) saturate(6) hue-rotate(3deg)
+    contrast(1.34);
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.token-boy-notifier-bubble {
+  min-height: 54px;
+  padding: 10px 12px;
+  border: 2px solid rgba(246, 215, 71, 0.76);
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 3px,
+      rgba(246, 215, 71, 0.08) 3px 4px
+    ),
+    rgba(0, 0, 0, 0.88);
+  box-shadow:
+    inset 0 0 12px rgba(246, 215, 71, 0.12),
+    0 0 14px rgba(246, 215, 71, 0.2);
+  color: var(--pip-yellow);
+  font-size: clamp(0.82rem, 1.7vw, 1rem);
+  font-weight: 900;
+  line-height: 1.15;
+  text-shadow:
+    0 0 4px currentColor,
+    0 0 13px var(--pip-dim);
+}
+
+.token-boy-notifier-bubble p {
+  margin: 0;
+}
+
+.token-boy-notifier-bubble p::after {
+  display: inline-block;
+  width: 0.62em;
+  content: "_";
+  animation: token-boy-caret 0.72s steps(1) infinite;
+}
+
+@keyframes token-boy-caret {
+  50% {
+    opacity: 0;
+  }
+}
+
 @media (max-width: 760px) {
   .terminal {
     align-items: stretch;
@@ -1224,5 +1298,22 @@ ul {
 
   .meter.ap {
     justify-content: flex-start;
+  }
+
+  .token-boy-notifier {
+    left: 8px;
+    bottom: 8px;
+    grid-template-columns: auto minmax(0, 1fr);
+    max-width: calc(100vw - 16px);
+  }
+
+  .token-boy-notifier-figure {
+    width: 64px;
+  }
+
+  .token-boy-notifier-bubble {
+    min-height: 46px;
+    padding: 8px 10px;
+    font-size: 0.76rem;
   }
 }

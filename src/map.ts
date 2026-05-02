@@ -17,6 +17,7 @@ import {
 } from "./page-config";
 import { hasPendingPlacePhoto } from "./place-photo";
 import { createSubtabNav } from "./subtabs";
+import { installTokenBoyNotifier } from "./token-boy-notifier";
 import type {
   ClientToServerEvents,
   Place,
@@ -148,6 +149,7 @@ const appState = reactive({
 }) as MapPageState;
 
 createApp(appState).mount("#app");
+installTokenBoyNotifier();
 
 ensureMapReady();
 startLocationTracking();
