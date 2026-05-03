@@ -98,20 +98,150 @@
           role="tabpanel"
           aria-labelledby="tab-stat"
         >
-          <img
-            class="stat-character"
-            src="/stat-boy.png"
-            width="466"
-            height="320"
-            alt=""
-            aria-hidden="true"
-          />
-          <section class="stat-summary" aria-label="User place entries">
-            <p>{{ statStatus }}</p>
-            <strong>{{ userPlaceCount }}</strong>
+          <div class="stat-character-anchor">
+            <button
+              type="button"
+              class="stat-character-button"
+              @click="openOracle()"
+              aria-label="Ask the Token Boy oracle"
+            >
+              <img
+                class="stat-character"
+                src="/stat-boy.png"
+                width="466"
+                height="320"
+                alt=""
+                aria-hidden="true"
+              />
+            </button>
+            <div
+              class="stat-speech"
+              role="status"
+              aria-live="polite"
+              :aria-label="speechFullText"
+            >
+              <span class="stat-speech-text">{{ speechText }}</span
+              ><span
+                class="stat-speech-caret"
+                :class="{ 'is-done': speechDone }"
+                aria-hidden="true"
+              ></span>
+            </div>
+          </div>
+          <section
+            class="stat-summary"
+            aria-label="User entries and token balance"
+          >
+            <strong>
+              <span class="stat-summary-label">ENTRIES</span>
+              <span class="stat-summary-value">{{ userPlaceCount }}</span>
+              <span class="stat-summary-label">TOKENS</span>
+              <span class="stat-summary-value">{{ userTokenBalance }}</span>
+            </strong>
           </section>
         </section>
       </section>
+
+      <div
+        v-if="isOracleOpen"
+        class="oracle-overlay"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="oracle-title"
+        @click="onOverlayClick($event)"
+      >
+        <div class="oracle-modal" @click.stop>
+          <button
+            type="button"
+            class="oracle-close"
+            aria-label="Close"
+            @click="closeOracle()"
+          >
+            [ X ]
+          </button>
+
+          <div class="oracle-blink-bar">
+            *** LIMITED TIME OFFER *** ACT NOW *** 100% REAL ANSWERS ***
+          </div>
+
+          <header class="oracle-header">
+            <p class="oracle-kicker">!! YOU HAVE BEEN SELECTED !!</p>
+            <h2 id="oracle-title" class="oracle-title">
+              ASK THE TOKEN BOY ORACLE&trade;
+            </h2>
+            <p class="oracle-sub">
+              The ONLY <u>FDA-unapproved</u> psychic in your area* * *
+            </p>
+          </header>
+
+          <ul class="oracle-badges" aria-hidden="true">
+            <li>FREE*</li>
+            <li>NO ADS**</li>
+            <li>1 WEIRD TRICK</li>
+            <li>DOCTORS HATE HIM</li>
+          </ul>
+
+          <form class="oracle-form" @submit.prevent="submitOracleQuestion()">
+            <label class="oracle-label" for="oracle-question">
+              TYPE YOUR BURNING QUESTION&hellip;
+            </label>
+            <textarea
+              id="oracle-question"
+              class="oracle-input"
+              v-model="oracleQuestion"
+              :disabled="isOracleSubmitting || !!oracleAnswer"
+              maxlength="240"
+              rows="3"
+              placeholder="will i be rich? am i cursed? does she like me???"
+            ></textarea>
+
+            <div class="oracle-cost">
+              <span>COST:</span>
+              <strong>{{ ORACLE_COST }} TOKENS</strong>
+              <span class="oracle-cost-sep">//</span>
+              <span>YOU HAVE:</span>
+              <strong>{{ userTokenBalance }}</strong>
+            </div>
+
+            <button
+              type="submit"
+              class="oracle-submit"
+              :disabled="isOracleSubmitting || !oracleQuestion.trim() || !!oracleAnswer"
+            >
+              <span v-if="isOracleSubmitting"
+                >CONSULTING THE SPIRITS&hellip;</span
+              >
+              <span v-else
+                >&gt;&gt; REVEAL MY DESTINY ({{ ORACLE_COST }} TOK)
+                &lt;&lt;</span
+              >
+            </button>
+
+            <p v-if="oracleError" class="oracle-error">{{ oracleError }}</p>
+          </form>
+
+          <div
+            v-if="oracleAnswer"
+            class="oracle-answer"
+            role="status"
+            aria-live="polite"
+          >
+            <p class="oracle-answer-label">THE ORACLE SPEAKS:</p>
+            <p class="oracle-answer-text">&laquo; {{ oracleAnswer }} &raquo;</p>
+            <button type="button" class="oracle-again" @click="resetOracle()">
+              ASK AGAIN ({{ ORACLE_COST }} TOK)
+            </button>
+          </div>
+
+          <p class="oracle-fineprint">
+            *Not free. **Contains ads. Token Boy Oracle&trade; is for
+            entertainment purposes only and is definitely not legally binding,
+            probably. By submitting you agree to forfeit {{ ORACLE_COST }}
+            non-refundable tokens to the void. Side effects may include
+            enlightenment, mild despair, and uncontrollable tapping.
+          </p>
+        </div>
+      </div>
     </main>
 
     <script type="module" src="/src/stat.ts"></script>

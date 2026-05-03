@@ -1,4 +1,4 @@
-import type { Place } from "../shared/socket-events";
+import type { Place, UserTokenStats } from "../shared/socket-events";
 
 const apiBaseUrl =
   import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || "";
@@ -11,6 +11,45 @@ export async function fetchPlaces() {
 
   const payload = (await response.json()) as { places?: Place[] };
   return payload.places ?? [];
+}
+
+export async function fetchUserTokenStats(userId: string) {
+  const response = await fetch(
+    `${apiBaseUrl}/api/users/${encodeURIComponent(userId)}/stats`,
+  );
+  if (!response.ok) {
+    throw new Error("Failed to load user stats");
+  }
+
+  return (await response.json()) as UserTokenStats;
+}
+
+export class InsufficientTokensError extends Error {
+  constructor() {
+    super("insufficient tokens");
+    this.name = "InsufficientTokensError";
+  }
+}
+
+export async function spendUserTokens(userId: string, amount: number) {
+  const response = await fetch(
+    `${apiBaseUrl}/api/users/${encodeURIComponent(userId)}/spend-tokens`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ amount }),
+    },
+  );
+
+  if (response.status === 402) {
+    throw new InsufficientTokensError();
+  }
+
+  if (!response.ok) {
+    throw new Error("Failed to spend tokens");
+  }
+
+  return (await response.json()) as { tokens: number };
 }
 
 export function getPlaceDetailHref(placeId: string) {

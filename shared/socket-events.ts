@@ -40,6 +40,19 @@ export type PlaceInput = {
 export type Place = PlaceInput & {
   id: string;
   createdAt: number;
+  tokenWorth: number;
+};
+
+export type PlaceCreationResult = {
+  place: Place;
+  tokenWorth: number;
+  tokenBalance: number;
+};
+
+export type UserTokenStats = {
+  userId: string;
+  tokens: number;
+  placeCount: number;
 };
 
 export interface ServerToClientEvents {

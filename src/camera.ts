@@ -10,7 +10,7 @@ import {
   setPendingPlacePhoto,
 } from "./place-photo";
 import { installTokenBoyNotifier, notifyTokenBoy } from "./token-boy-notifier";
-import type { PlaceInput } from "../shared/socket-events";
+import type { PlaceCreationResult, PlaceInput } from "../shared/socket-events";
 
 type CameraPageState = {
   cameraCoordsText: string;
@@ -449,7 +449,9 @@ async function storePlaceRecord() {
       method: "POST",
     });
 
-    const result = (await response.json()) as { error?: string };
+    const result = (await response.json()) as PlaceCreationResult & {
+      error?: string;
+    };
     if (!response.ok) {
       throw new Error(result.error || "Failed to store place");
     }
@@ -458,7 +460,8 @@ async function storePlaceRecord() {
     appState.placeTitle = "";
     resumeLivePreview();
     appState.formStatus = "PLACE STORED";
-    notifyTokenBoy("Thank you for your contribution");
+    await notifyTokenBoy(`+${result.tokenWorth} TOKENS`);
+    await notifyTokenBoy("Thank you for your contribution");
   } catch (error) {
     appState.formStatus =
       error instanceof Error ? error.message.toUpperCase() : "STORE FAILURE";

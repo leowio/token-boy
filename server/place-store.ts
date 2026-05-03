@@ -3,7 +3,12 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
 
-import type { Place, PlaceInput } from "../shared/socket-events.js";
+import type {
+  Place,
+  PlaceCreationResult,
+  PlaceInput,
+  UserTokenStats,
+} from "../shared/socket-events.js";
 
 type PlaceRow = {
   id: string;
@@ -14,6 +19,7 @@ type PlaceRow = {
   latitude: number;
   longitude: number;
   created_at: number;
+  token_worth: number;
 };
 
 const dataDir = path.resolve(process.cwd(), "data");
@@ -38,11 +44,18 @@ database.exec(`
     description TEXT NOT NULL DEFAULT '',
     latitude REAL NOT NULL,
     longitude REAL NOT NULL,
-    created_at INTEGER NOT NULL
+    created_at INTEGER NOT NULL,
+    token_worth INTEGER NOT NULL DEFAULT 0
   );
 
   CREATE INDEX IF NOT EXISTS idx_places_user_id ON places(user_id);
   CREATE INDEX IF NOT EXISTS idx_places_created_at ON places(created_at DESC);
+
+  CREATE TABLE IF NOT EXISTS users (
+    user_id TEXT PRIMARY KEY,
+    tokens INTEGER NOT NULL DEFAULT 0,
+    updated_at INTEGER NOT NULL
+  );
 `);
 
 export function listPlaces() {
@@ -50,7 +63,7 @@ export function listPlaces() {
     database
       .prepare(
         `
-        SELECT id, user_id, photo, title, description, latitude, longitude, created_at
+        SELECT id, user_id, photo, title, description, latitude, longitude, created_at, token_worth
         FROM places
         ORDER BY created_at DESC
       `,
@@ -61,15 +74,23 @@ export function listPlaces() {
 
 export function createPlace(input: PlaceInput) {
   const now = Date.now();
+  const userId = sanitizeUserId(input.userId);
+  const title = sanitizeTitle(input.title);
+  const description = sanitizeDescription(input.description);
+  const latitude = sanitizeLatitude(input.latitude);
+  const longitude = sanitizeLongitude(input.longitude);
+  const photo = sanitizePhoto(input.photo);
+  const tokenWorth = calculateTokenWorth(description);
   const place: Place = {
     id: randomUUID(),
-    userId: sanitizeUserId(input.userId),
-    photo: sanitizePhoto(input.photo),
-    title: sanitizeTitle(input.title),
-    description: sanitizeDescription(input.description),
-    latitude: sanitizeLatitude(input.latitude),
-    longitude: sanitizeLongitude(input.longitude),
+    userId,
+    photo,
+    title,
+    description,
+    latitude,
+    longitude,
     createdAt: now,
+    tokenWorth,
   };
 
   database
@@ -83,7 +104,8 @@ export function createPlace(input: PlaceInput) {
       description,
       latitude,
       longitude,
-      created_at
+      created_at,
+      token_worth
     ) VALUES (
       :id,
       :user_id,
@@ -92,7 +114,8 @@ export function createPlace(input: PlaceInput) {
       :description,
       :latitude,
       :longitude,
-      :created_at
+      :created_at,
+      :token_worth
     )
   `,
     )
@@ -105,9 +128,16 @@ export function createPlace(input: PlaceInput) {
       latitude: place.latitude,
       longitude: place.longitude,
       created_at: place.createdAt,
+      token_worth: place.tokenWorth,
     });
 
-  return place;
+  const tokenBalance = addUserTokens(place.userId, place.tokenWorth, now);
+
+  return {
+    place,
+    tokenWorth: place.tokenWorth,
+    tokenBalance,
+  } satisfies PlaceCreationResult;
 }
 
 export function getPlacesCount() {
@@ -126,6 +156,36 @@ export function getPlacesDatabasePath() {
   return databasePath;
 }
 
+export function getUserTokenStats(userId: string): UserTokenStats {
+  const normalizedUserId = sanitizeUserId(userId);
+  const row = database
+    .prepare(
+      `
+      SELECT tokens
+      FROM users
+      WHERE user_id = :user_id
+    `,
+    )
+    .get({ user_id: normalizedUserId }) as { tokens: number } | undefined;
+
+  const tokens = row?.tokens ?? 0;
+  const placeCountRow = database
+    .prepare(
+      `
+      SELECT COUNT(*) AS count
+      FROM places
+      WHERE user_id = :user_id
+    `,
+    )
+    .get({ user_id: normalizedUserId }) as { count: number } | undefined;
+
+  return {
+    userId: normalizedUserId,
+    tokens,
+    placeCount: placeCountRow?.count ?? 0,
+  };
+}
+
 export function getUploadsDirectoryPath() {
   return uploadsDir;
 }
@@ -140,7 +200,13 @@ function mapRowToPlace(row: PlaceRow): Place {
     latitude: row.latitude,
     longitude: row.longitude,
     createdAt: row.created_at,
+    tokenWorth: row.token_worth,
   };
+}
+
+function calculateTokenWorth(description: string) {
+  const text = description.trim();
+  return 25 + Math.ceil(text.length / 40);
 }
 
 function sanitizeUserId(userId: string) {
@@ -220,6 +286,63 @@ function storePhotoDataUrl(photo: string) {
   fs.writeFileSync(absolutePath, buffer);
 
   return `/uploads/${filename}`;
+}
+
+export function spendUserTokens(userId: string, amount: number) {
+  if (!Number.isFinite(amount) || amount <= 0) {
+    throw new Error("amount must be a positive number");
+  }
+
+  const normalizedUserId = sanitizeUserId(userId);
+  const current = getUserTokenStats(normalizedUserId);
+
+  if (current.tokens < amount) {
+    const error = new Error("insufficient tokens");
+    (error as Error & { code?: string }).code = "INSUFFICIENT_TOKENS";
+    throw error;
+  }
+
+  const nextTokens = current.tokens - amount;
+  database
+    .prepare(
+      `
+      INSERT INTO users (user_id, tokens, updated_at)
+      VALUES (:user_id, :tokens, :updated_at)
+      ON CONFLICT(user_id) DO UPDATE SET
+        tokens = excluded.tokens,
+        updated_at = excluded.updated_at
+    `,
+    )
+    .run({
+      user_id: normalizedUserId,
+      tokens: nextTokens,
+      updated_at: Date.now(),
+    });
+
+  return nextTokens;
+}
+
+function addUserTokens(userId: string, tokens: number, updatedAt: number) {
+  const current = getUserTokenStats(userId);
+  const nextTokens = current.tokens + tokens;
+
+  database
+    .prepare(
+      `
+      INSERT INTO users (user_id, tokens, updated_at)
+      VALUES (:user_id, :tokens, :updated_at)
+      ON CONFLICT(user_id) DO UPDATE SET
+        tokens = excluded.tokens,
+        updated_at = excluded.updated_at
+    `,
+    )
+    .run({
+      user_id: userId,
+      tokens: nextTokens,
+      updated_at: updatedAt,
+    });
+
+  return nextTokens;
 }
 
 function getPhotoExtension(mimeType: string) {

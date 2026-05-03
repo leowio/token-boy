@@ -14,8 +14,10 @@ import type {
 import {
   createPlace,
   getPlacesCount,
+  getUserTokenStats,
   getUploadsDirectoryPath,
   listPlaces,
+  spendUserTokens,
 } from "./place-store.js";
 
 const port = Number.parseInt(process.env.PORT ?? "3000", 10);
@@ -123,7 +125,7 @@ app.post("/api/places", (request, response) => {
   const payload = request.body as Partial<PlaceInput>;
 
   try {
-    const place = createPlace({
+    const result = createPlace({
       photo: typeof payload.photo === "string" ? payload.photo : null,
       title: typeof payload.title === "string" ? payload.title : "",
       description:
@@ -133,11 +135,42 @@ app.post("/api/places", (request, response) => {
       userId: typeof payload.userId === "string" ? payload.userId : "",
     });
 
-    io.emit("placeCreated", place);
-    response.status(201).json({ place });
+    io.emit("placeCreated", result.place);
+    response.status(201).json(result);
   } catch (error) {
     response.status(400).json({
       error: error instanceof Error ? error.message : "Invalid place payload",
+    });
+  }
+});
+
+app.get("/api/users/:userId/stats", (request, response) => {
+  const userId = request.params.userId.trim();
+  try {
+    response.json(getUserTokenStats(userId));
+  } catch (error) {
+    response.status(400).json({
+      error: error instanceof Error ? error.message : "Invalid user id",
+    });
+  }
+});
+
+app.post("/api/users/:userId/spend-tokens", (request, response) => {
+  const userId = request.params.userId.trim();
+  const amount = Number((request.body as { amount?: unknown })?.amount);
+
+  try {
+    const tokens = spendUserTokens(userId, amount);
+    response.json({ tokens });
+  } catch (error) {
+    const code = (error as Error & { code?: string }).code;
+    if (code === "INSUFFICIENT_TOKENS") {
+      response.status(402).json({ error: "insufficient tokens" });
+      return;
+    }
+
+    response.status(400).json({
+      error: error instanceof Error ? error.message : "Invalid spend request",
     });
   }
 });
@@ -187,12 +220,12 @@ io.on("connection", (socket) => {
 
   socket.on("createPlace", (input) => {
     try {
-      const place = createPlace({
+      const result = createPlace({
         ...input,
         userId: input.userId.trim() || socket.id,
       });
 
-      io.emit("placeCreated", place);
+      io.emit("placeCreated", result.place);
     } catch (error) {
       socket.emit("message", {
         id: `place-error-${Date.now()}`,
