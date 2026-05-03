@@ -9,6 +9,7 @@ import maplibregl, {
 import { createApp, reactive } from "petite-vue";
 import { io, type Socket } from "socket.io-client";
 
+import { installBootScreen } from "./boot-screen";
 import {
   buildCameraPageHref,
   navigatePageTabs,
@@ -149,6 +150,7 @@ const appState = reactive({
 }) as MapPageState;
 
 createApp(appState).mount("#app");
+installBootScreen();
 installTokenBoyNotifier();
 
 ensureMapReady();
@@ -497,8 +499,9 @@ function createPinMarker(title: string, latitude: number, longitude: number) {
   element.append(label);
 
   const marker = new Marker({
-    anchor: "center",
+    anchor: "left",
     element,
+    offset: [-7, 0],
   }).setLngLat([longitude, latitude]);
 
   updatePinMarker(marker, title, latitude, longitude);

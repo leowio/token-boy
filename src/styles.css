@@ -39,6 +39,72 @@ body::after {
   content: "";
 }
 
+.boot-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: clamp(14px, 4vw, 42px);
+  background:
+    radial-gradient(
+      circle at 50% 46%,
+      rgba(246, 215, 71, 0.1),
+      transparent 38%
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 3px,
+      rgba(246, 215, 71, 0.06) 3px 4px
+    ),
+    #000;
+  color: var(--pip-yellow);
+  opacity: 1;
+  transition: opacity 340ms ease;
+}
+
+.boot-screen.is-complete {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.boot-console {
+  width: min(92vw, 860px);
+  height: min(78vh, 520px);
+  overflow: hidden;
+  padding: clamp(14px, 3vw, 28px);
+  border: 2px solid rgba(246, 215, 71, 0.74);
+  background: rgba(0, 0, 0, 0.9);
+  box-shadow:
+    inset 0 0 18px rgba(246, 215, 71, 0.1),
+    0 0 24px rgba(246, 215, 71, 0.22);
+  text-shadow:
+    0 0 4px currentColor,
+    0 0 13px var(--pip-dim);
+}
+
+.boot-ascii,
+.boot-log {
+  margin: 0;
+  font: inherit;
+  font-weight: 900;
+  line-height: 1.15;
+  white-space: pre;
+}
+
+.boot-ascii {
+  margin-bottom: 18px;
+  color: var(--pip-yellow);
+  font-size: clamp(0.46rem, 1.32vw, 0.86rem);
+}
+
+.boot-log {
+  height: 58%;
+  overflow: hidden;
+  color: rgba(246, 215, 71, 0.82);
+  font-size: clamp(0.72rem, 1.7vw, 1.02rem);
+}
+
 button,
 a {
   color: inherit;
@@ -152,9 +218,12 @@ ul {
   --tab-rail-y: 50px;
   --tab-top-y: 8px;
   --tab-width: clamp(104px, 14vw, 140px);
+  --screen-tool-size: 54px;
+  --screen-tool-gap: 14px;
   width: var(--content-width);
   margin: 0 auto;
   min-height: 64px;
+  padding-inline: calc(var(--screen-tool-size) + var(--screen-tool-gap));
 }
 
 .tabs::before {
@@ -236,7 +305,7 @@ ul {
   z-index: 2;
   display: grid;
   place-items: center;
-  width: 54px;
+  width: var(--screen-tool-size, 54px);
   height: 48px;
   margin: 0;
   padding: 0;
@@ -801,6 +870,7 @@ ul {
     0 0 4px currentColor,
     0 0 13px var(--pip-dim),
     2px 0 1px rgba(246, 215, 71, 0.24);
+  transform-origin: 7px 50%;
 }
 
 .place-marker-pin {
@@ -1244,11 +1314,24 @@ ul {
   }
 
   .tabs {
+    --screen-tool-size: 42px;
+    --screen-tool-gap: 8px;
+    --tab-width: clamp(66px, 20vw, 92px);
     width: var(--content-width);
   }
 
   .tab-list {
-    width: min(100%, 300px);
+    width: 100%;
+    font-size: clamp(1.05rem, 6vw, 1.45rem);
+  }
+
+  .screen-tool {
+    height: 38px;
+  }
+
+  .screen-tool svg {
+    width: 22px;
+    height: 22px;
   }
 
   .body-grid {
@@ -1298,6 +1381,19 @@ ul {
 
   .meter.ap {
     justify-content: flex-start;
+  }
+
+  .boot-console {
+    width: calc(100vw - 24px);
+    height: min(72vh, 420px);
+  }
+
+  .boot-ascii {
+    font-size: 0.34rem;
+  }
+
+  .boot-log {
+    font-size: 0.68rem;
   }
 
   .token-boy-notifier {

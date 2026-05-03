@@ -2,6 +2,7 @@ import "./styles.css";
 
 import { createApp, reactive } from "petite-vue";
 
+import { installBootScreen } from "./boot-screen";
 import { getCameraReturnHref } from "./page-config";
 import {
   clearPendingPlacePhoto,
@@ -86,6 +87,7 @@ const appState = reactive({
 }) as CameraPageState;
 
 createApp(appState).mount("#app");
+installBootScreen();
 installTokenBoyNotifier();
 
 initializeCameraPage();

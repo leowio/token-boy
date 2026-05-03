@@ -2,6 +2,7 @@ import "./styles.css";
 
 import { createApp, reactive } from "petite-vue";
 
+import { installBootScreen } from "./boot-screen";
 import { buildCameraPageHref, navigatePageTabs, pages } from "./page-config";
 import { hasPendingPlacePhoto } from "./place-photo";
 import { fetchPlaces } from "./place-utils";
@@ -25,6 +26,7 @@ const appState = reactive({
 });
 
 createApp(appState).mount("#app");
+installBootScreen();
 installTokenBoyNotifier();
 void loadUserPlaceCount();
 

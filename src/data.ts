@@ -2,6 +2,7 @@ import "./styles.css";
 
 import { createApp, reactive } from "petite-vue";
 
+import { installBootScreen } from "./boot-screen";
 import {
   buildCameraPageHref,
   navigatePageTabs,
@@ -59,6 +60,7 @@ const appState = reactive({
 });
 
 createApp(appState).mount("#app");
+installBootScreen();
 installTokenBoyNotifier();
 void loadPlaces();
 
