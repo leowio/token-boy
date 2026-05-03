@@ -1,15 +1,15 @@
 {
   "name": "tokenboy",
   "short_name": "tokenboy",
-  "start_url": "/",
-  "scope": "/",
+  "start_url": ".",
+  "scope": ".",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",
   "orientation": "any",
   "icons": [
     {
-      "src": "/tokenboy-icon.svg",
+      "src": "tokenboy-icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"

@@ -1,3 +1,5 @@
+import { getRelativeUrl } from "./app-url";
+
 type TokenBoyNotifyEvent = CustomEvent<string>;
 
 declare global {
@@ -33,7 +35,7 @@ export function installTokenBoyNotifier() {
 
   const figure = document.createElement("img");
   figure.className = "token-boy-notifier-figure";
-  figure.src = "/stat-boy.png";
+  figure.src = getRelativeUrl("/stat-boy.png");
   figure.width = 466;
   figure.height = 320;
   figure.alt = "";

@@ -10,8 +10,8 @@
       name="apple-mobile-web-app-status-bar-style"
       content="black-translucent"
     />
-    <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="apple-touch-icon" href="/tokenboy-icon.svg" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="tokenboy-icon.svg" />
     <title>tokenboy</title>
     <style>
       :root {
@@ -48,7 +48,7 @@
         <header class="tabs" aria-label="Primary navigation">
           <a
             class="screen-tool back-tool"
-            href="/data.html"
+            href="data.html"
             aria-label="Return to archive"
             title="Return to archive"
           >
@@ -116,7 +116,7 @@
         </header>
 
         <nav class="subtabs" aria-label="DATA navigation" role="navigation">
-          <a class="subtab-button active" href="/data.html">ARCHIVE</a>
+          <a class="subtab-button active" href="data.html">ARCHIVE</a>
           <span class="subtab-button">{{ detailLabel }}</span>
         </nav>
 
@@ -149,7 +149,7 @@
                 <p>USER {{ place.userId }}</p>
                 <p>COORD {{ placeCoords }}</p>
                 <p>STAMP {{ placeTimestamp }}</p>
-                <a class="data-back-link" href="/data.html"
+                <a class="data-back-link" href="data.html"
                   >RETURN TO ARCHIVE</a
                 >
               </aside>
@@ -164,6 +164,6 @@
       </section>
     </main>
 
-    <script type="module" src="/src/data-detail.ts"></script>
+    <script type="module" src="src/data-detail.ts"></script>
   </body>
 </html>

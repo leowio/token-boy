@@ -12,13 +12,13 @@ export type FooterMeter = {
   percent: number;
 };
 
-export const cameraPageHref = "/camera.html";
+export const cameraPageHref = "camera.html";
 const cameraReturnParam = "returnTo";
 
 export const pages: PageLink[] = [
-  { id: "stat", label: "STAT", href: "/" },
-  { id: "data", label: "DATA", href: "/data.html" },
-  { id: "map", label: "MAP", href: "/map.html" },
+  { id: "stat", label: "STAT", href: "./" },
+  { id: "data", label: "DATA", href: "data.html" },
+  { id: "map", label: "MAP", href: "map.html" },
 ];
 
 export const subtabsByPage: Record<PageId, string[]> = {
@@ -79,7 +79,7 @@ export function getCameraReturnHref() {
   const params = new URLSearchParams(window.location.search);
   const returnHref = params.get(cameraReturnParam);
 
-  if (!returnHref || !returnHref.startsWith("/")) {
+  if (!returnHref || returnHref.startsWith("http")) {
     return pages.find((page) => page.id === "map")?.href ?? "/";
   }
 

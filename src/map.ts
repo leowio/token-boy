@@ -24,6 +24,7 @@ import type {
   Place,
   ServerToClientEvents,
 } from "../shared/socket-events";
+import { getPublicBasePath } from "./app-url";
 
 type UserProfile = {
   userId: string;
@@ -96,8 +97,9 @@ const rasterBasemapStyle: StyleSpecification = {
   ],
 };
 
-const socket: Socket<ServerToClientEvents, ClientToServerEvents> =
-  io(socketUrl);
+const socket: Socket<ServerToClientEvents, ClientToServerEvents> = socketUrl
+  ? io(socketUrl)
+  : io({ path: `${getPublicBasePath()}socket.io` });
 const places = new Map<string, Place>();
 const placeMarkers = new Map<string, Marker>();
 let currentLocationMarker: Marker | null = null;

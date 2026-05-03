@@ -11,6 +11,7 @@ import {
 } from "./place-photo";
 import { installTokenBoyNotifier, notifyTokenBoy } from "./token-boy-notifier";
 import type { PlaceCreationResult, PlaceInput } from "../shared/socket-events";
+import { joinUrl } from "./app-url";
 
 type CameraPageState = {
   cameraCoordsText: string;
@@ -441,7 +442,7 @@ async function storePlaceRecord() {
   appState.formStatus = "STORING PLACE";
 
   try {
-    const response = await fetch(`${apiBaseUrl}/api/places`, {
+    const response = await fetch(joinUrl(apiBaseUrl, "/api/places"), {
       body: JSON.stringify(payload),
       headers: {
         "Content-Type": "application/json",

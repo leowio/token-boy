@@ -1,10 +1,11 @@
 import type { Place, UserTokenStats } from "../shared/socket-events";
+import { joinUrl } from "./app-url";
 
 const apiBaseUrl =
   import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || "";
 
 export async function fetchPlaces() {
-  const response = await fetch(`${apiBaseUrl}/api/places`);
+  const response = await fetch(joinUrl(apiBaseUrl, "/api/places"));
   if (!response.ok) {
     throw new Error("Failed to load places");
   }
@@ -15,7 +16,7 @@ export async function fetchPlaces() {
 
 export async function fetchUserTokenStats(userId: string) {
   const response = await fetch(
-    `${apiBaseUrl}/api/users/${encodeURIComponent(userId)}/stats`,
+    joinUrl(apiBaseUrl, `/api/users/${encodeURIComponent(userId)}/stats`),
   );
   if (!response.ok) {
     throw new Error("Failed to load user stats");
@@ -33,7 +34,10 @@ export class InsufficientTokensError extends Error {
 
 export async function spendUserTokens(userId: string, amount: number) {
   const response = await fetch(
-    `${apiBaseUrl}/api/users/${encodeURIComponent(userId)}/spend-tokens`,
+    joinUrl(
+      apiBaseUrl,
+      `/api/users/${encodeURIComponent(userId)}/spend-tokens`,
+    ),
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -53,7 +57,7 @@ export async function spendUserTokens(userId: string, amount: number) {
 }
 
 export function getPlaceDetailHref(placeId: string) {
-  return `/data-detail.html?id=${encodeURIComponent(placeId)}`;
+  return `data-detail.html?id=${encodeURIComponent(placeId)}`;
 }
 
 export function formatPlaceTimestamp(createdAt: number) {

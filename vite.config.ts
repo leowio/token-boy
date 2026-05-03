@@ -9,6 +9,7 @@ export default defineConfig(({ mode }) => {
     env.VITE_BACKEND_URL || env.VITE_API_URL || "http://localhost:4210";
 
   return {
+    base: "./",
     plugins: [basicSsl()],
     server: {
       proxy: {
