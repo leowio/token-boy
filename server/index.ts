@@ -24,7 +24,7 @@ import {
 
 const port = Number.parseInt(process.env.PORT ?? "4210", 10);
 const isProduction = process.env.NODE_ENV === "production";
-const useHttps = !isProduction && process.env.HTTPS !== "false";
+const useHttps = process.env.HTTPS !== "false";
 const projectRoot = process.cwd();
 const htmlEntryPoints = new Set([
   "index.html",
@@ -93,10 +93,17 @@ function isAllowedClientOrigin(origin: string | undefined) {
   try {
     const url = new URL(origin);
     const allowedDevPorts = new Set(["5173", String(port)]);
-    return allowedDevPorts.has(url.port) && isLocalDevHost(url.hostname);
+    return (
+      isBrowserCircusHost(url.hostname) ||
+      (allowedDevPorts.has(url.port) && isLocalDevHost(url.hostname))
+    );
   } catch {
     return false;
   }
+}
+
+function isBrowserCircusHost(hostname: string) {
+  return hostname === "browsercircus.live" || hostname === "www.browsercircus.live";
 }
 
 function isLocalDevHost(hostname: string) {
