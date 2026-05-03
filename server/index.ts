@@ -1,7 +1,9 @@
 import "dotenv/config";
 
 import express from "express";
+import fs from "node:fs";
 import http from "node:http";
+import https from "node:https";
 import path from "node:path";
 import { Server } from "socket.io";
 import type {
@@ -20,7 +22,17 @@ import {
   spendUserTokens,
 } from "./place-store.js";
 
-const port = Number.parseInt(process.env.PORT ?? "3000", 10);
+const port = Number.parseInt(process.env.PORT ?? "4210", 10);
+const isProduction = process.env.NODE_ENV === "production";
+const useHttps = !isProduction && process.env.HTTPS !== "false";
+const projectRoot = process.cwd();
+const htmlEntryPoints = new Set([
+  "index.html",
+  "data.html",
+  "data-detail.html",
+  "map.html",
+  "camera.html",
+]);
 const clientOrigins = process.env.CLIENT_ORIGIN?.split(",")
   .map((origin) => origin.trim())
   .filter(Boolean) ?? ["http://localhost:5173", "http://127.0.0.1:5173"];
@@ -28,7 +40,7 @@ const allowAnyClientOrigin = clientOrigins.includes("*");
 const clientOriginSet = new Set(clientOrigins);
 
 const app = express();
-const server = http.createServer(app);
+const server: http.Server | https.Server = await createHttpServer();
 const io = new Server<ClientToServerEvents, ServerToClientEvents>(server, {
   cors: {
     origin(origin, callback) {
@@ -36,6 +48,18 @@ const io = new Server<ClientToServerEvents, ServerToClientEvents>(server, {
     },
   },
 });
+
+async function createHttpServer() {
+  if (!useHttps) {
+    return http.createServer(app);
+  }
+
+  const { getCertificate } = await import("@vitejs/plugin-basic-ssl");
+  const cert = await getCertificate(
+    path.join(projectRoot, "node_modules/.vite/basic-ssl"),
+  );
+  return https.createServer({ cert, key: cert }, app);
+}
 
 app.use((request, response, next) => {
   const origin = request.headers.origin;
@@ -68,7 +92,8 @@ function isAllowedClientOrigin(origin: string | undefined) {
 
   try {
     const url = new URL(origin);
-    return url.port === "5173" && isLocalDevHost(url.hostname);
+    const allowedDevPorts = new Set(["5173", String(port)]);
+    return allowedDevPorts.has(url.port) && isLocalDevHost(url.hostname);
   } catch {
     return false;
   }
@@ -175,17 +200,65 @@ app.post("/api/users/:userId/spend-tokens", (request, response) => {
   }
 });
 
-const clientDist = path.resolve(process.cwd(), "dist");
 app.use("/uploads", express.static(getUploadsDirectoryPath()));
-app.use(express.static(clientDist));
-app.use((request, response, next) => {
-  if (request.method === "GET" && request.accepts("html")) {
-    response.sendFile(path.join(clientDist, "index.html"));
+
+await setupClientServing();
+
+async function setupClientServing() {
+  if (isProduction) {
+    setupProductionStatic();
     return;
   }
 
-  next();
-});
+  await setupViteMiddleware();
+}
+
+function setupProductionStatic() {
+  const clientDist = path.resolve(projectRoot, "dist");
+  app.use(express.static(clientDist));
+  app.use((request, response, next) => {
+    if (request.method === "GET" && request.accepts("html")) {
+      response.sendFile(path.join(clientDist, "index.html"));
+      return;
+    }
+
+    next();
+  });
+}
+
+async function setupViteMiddleware() {
+  const { createServer: createViteServer } = await import("vite");
+  const vite = await createViteServer({
+    root: projectRoot,
+    appType: "custom",
+    server: {
+      middlewareMode: true,
+      hmr: { server },
+    },
+  });
+
+  app.use(vite.middlewares);
+
+  app.use(async (request, response, next) => {
+    if (request.method !== "GET" || !request.accepts("html")) {
+      next();
+      return;
+    }
+
+    try {
+      const requestedPath = request.path.replace(/^\/+/, "");
+      const candidate = requestedPath || "index.html";
+      const entry = htmlEntryPoints.has(candidate) ? candidate : "index.html";
+      const templatePath = path.join(projectRoot, entry);
+      const rawTemplate = await fs.promises.readFile(templatePath, "utf-8");
+      const html = await vite.transformIndexHtml(request.originalUrl, rawTemplate);
+      response.status(200).set("Content-Type", "text/html").end(html);
+    } catch (error) {
+      vite.ssrFixStacktrace(error as Error);
+      next(error);
+    }
+  });
+}
 
 io.on("connection", (socket) => {
   io.emit("presence", io.of("/").sockets.size);
@@ -243,5 +316,6 @@ io.on("connection", (socket) => {
 });
 
 server.listen(port, () => {
-  console.log(`Socket.IO server listening on http://localhost:${port}`);
+  const protocol = useHttps ? "https" : "http";
+  console.log(`Token Boy server listening on ${protocol}://localhost:${port}`);
 });

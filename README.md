@@ -14,7 +14,7 @@ npm install
 npm run dev
 ```
 
-The frontend runs on `https://localhost:5173` in local development and proxies backend requests to `http://localhost:3000`.
+The frontend and backend are served together on `http://localhost:4210` in local development (Vite runs in middleware mode inside the Express server). Set `PORT` to override.
 
 ## Production Build
 

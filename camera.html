@@ -27,10 +27,6 @@
         background: #000;
       }
 
-      body {
-        overflow: hidden;
-      }
-
       [v-cloak] {
         display: none;
       }
@@ -79,26 +75,63 @@
           :class="{ 'is-captured': hasSnapshot }"
           aria-label="Field camera"
         >
-          <div class="camera-frame" :class="{ 'is-captured': hasSnapshot }">
-            <video
-              id="field-camera-video"
-              class="field-camera-source"
-              autoplay
-              muted
-              playsinline
-            ></video>
-            <canvas id="field-camera-canvas" class="field-camera-view"></canvas>
-            <div class="camera-reticle" aria-hidden="true"></div>
+          <div class="camera-stage">
+            <div class="camera-frame" :class="{ 'is-captured': hasSnapshot }">
+              <video
+                id="field-camera-video"
+                class="field-camera-source"
+                autoplay
+                muted
+                playsinline
+              ></video>
+              <canvas
+                id="field-camera-canvas"
+                class="field-camera-view"
+              ></canvas>
+              <div class="camera-reticle" aria-hidden="true"></div>
+              <div class="camera-status-overlay" aria-hidden="true">
+                <span class="camera-status-pill">{{ cameraStatus }}</span>
+                <span
+                  v-if="hasSnapshot"
+                  class="camera-status-pill is-locked"
+                >LOCKED</span>
+              </div>
+            </div>
           </div>
 
           <div class="camera-sidebar">
             <aside v-if="!hasSnapshot" class="map-readout camera-readout">
               <h2>FIELD CAMERA</h2>
-              <p>{{ cameraStatus }}</p>
-              <p>{{ cameraCoordsText }}</p>
-              <p>{{ cameraPhotoText }}</p>
-              <p>{{ cameraUserText }}</p>
-              <p>{{ cameraFrameText }}</p>
+              <dl class="camera-readout-list">
+                <div>
+                  <dt>STATUS</dt>
+                  <dd>{{ cameraStatus }}</dd>
+                </div>
+                <div>
+                  <dt>GPS</dt>
+                  <dd>{{ cameraCoordsText }}</dd>
+                </div>
+                <div>
+                  <dt>PHOTO</dt>
+                  <dd>{{ cameraPhotoText }}</dd>
+                </div>
+                <div>
+                  <dt>USER</dt>
+                  <dd>{{ cameraUserText }}</dd>
+                </div>
+                <div>
+                  <dt>FRAME</dt>
+                  <dd>{{ cameraFrameText }}</dd>
+                </div>
+              </dl>
+
+              <button
+                type="button"
+                class="capture-button is-primary-cta"
+                @click="capturePhoto"
+              >
+                CAPTURE
+              </button>
             </aside>
 
             <form
@@ -131,7 +164,7 @@
                   v-model="placeDescription"
                   class="camera-input camera-textarea"
                   name="description"
-                  rows="5"
+                  rows="4"
                   maxlength="240"
                   spellcheck="false"
                   placeholder="ENTER DESCRIPTION"
@@ -175,7 +208,6 @@
 
               <div class="camera-actions">
                 <button
-                  v-if="hasSnapshot"
                   type="button"
                   class="capture-button secondary"
                   @click="retakePhoto"
@@ -183,32 +215,14 @@
                   RETAKE
                 </button>
                 <button
-                  v-if="hasSnapshot"
                   type="submit"
-                  class="capture-button"
+                  class="capture-button is-primary-cta"
                   :disabled="isSaving"
                 >
                   {{ isSaving ? "STORING" : "STORE PLACE" }}
                 </button>
-                <button
-                  v-else
-                  type="button"
-                  class="capture-button"
-                  @click="capturePhoto"
-                >
-                  CAPTURE
-                </button>
               </div>
             </form>
-
-            <button
-              v-else
-              type="button"
-              class="capture-button"
-              @click="capturePhoto"
-            >
-              CAPTURE
-            </button>
           </div>
         </section>
       </section>
