@@ -143,8 +143,9 @@
       </section>
 
       <div
-        v-if="isOracleOpen"
         class="oracle-overlay"
+        :class="{ 'is-open': isOracleOpen }"
+        :aria-hidden="isOracleOpen ? 'false' : 'true'"
         role="dialog"
         aria-modal="true"
         aria-labelledby="oracle-title"

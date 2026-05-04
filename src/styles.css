@@ -1648,12 +1648,16 @@ ul {
   position: fixed;
   inset: 0;
   z-index: 9999;
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: center;
   padding: 18px;
   background: rgba(0, 0, 0, 0.82);
   backdrop-filter: blur(2px);
+}
+
+.oracle-overlay.is-open {
+  display: flex;
   animation: oracle-overlay-in 140ms ease-out;
 }
 
