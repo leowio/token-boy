@@ -28,6 +28,7 @@ const appState = reactive({
   hasPendingPhoto: hasPendingPlacePhoto(),
   pages,
   place: null as Place | null,
+  placePhotoSrc: "",
   placeCoords: "--.---- / --.----",
   placeDescription: "NO DESCRIPTION",
   placeTimestamp: "----.--.-- --:--",
@@ -58,6 +59,7 @@ async function loadPlace() {
 
     appState.place = place;
     appState.detailLabel = place.title;
+    appState.placePhotoSrc = normalizePlacePhotoSrc(place.photo);
     appState.detailStatus =
       place.userId === profile.userId ? "MY RECORD" : "FIELD RECORD";
     appState.placeCoords = formatPlaceCoords(place.latitude, place.longitude);
@@ -67,4 +69,8 @@ async function loadPlace() {
     appState.detailStatus =
       error instanceof Error ? error.message.toUpperCase() : "LOAD FAILURE";
   }
+}
+
+function normalizePlacePhotoSrc(photo: string | null) {
+  return photo?.replace(/^\//, "") ?? "";
 }
